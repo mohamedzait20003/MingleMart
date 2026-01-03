@@ -1,4 +1,3 @@
-
 import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 import { authApi } from '../apis/authApi';
 
@@ -16,6 +15,7 @@ export interface AuthState {
   user: User | null;
   role: Role;
   token: Token;
+  isVerified: boolean;
   isAuthenticated: boolean;
 }
 
@@ -23,7 +23,8 @@ const initialState: AuthState = {
   user: null,
   role: null,
   token: null,
-  isAuthenticated: false,
+  isVerified: false,
+  isAuthenticated: false
 };
 
 const authSlice = createSlice({
@@ -38,10 +39,11 @@ const authSlice = createSlice({
         authApi.endpoints.googlelogin.matchFulfilled
       ),
       (state, action) => {
+        state.isAuthenticated = true;
         state.user = action.payload.data.user; 
         state.role = action.payload.data.role;
         state.token = action.payload.data.token;
-        state.isAuthenticated = true;
+        state.isVerified = action.payload.data.isVerified;
       }
     )
     builder.addMatcher(

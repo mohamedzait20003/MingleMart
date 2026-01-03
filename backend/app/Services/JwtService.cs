@@ -45,7 +45,7 @@ namespace App.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public Task<bool> BlackListToken(ClaimsPrincipal principal)
+        public Task BlackListToken(ClaimsPrincipal principal)
         {
             var jti = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
@@ -66,39 +66,12 @@ namespace App.Services
             return Task.FromResult(true);
         }
 
-        public ClaimsPrincipal? ValidateToken(string token)
+        public bool IsTokenBlacklisted(string jti)
         {
-            try {
-                var jwtKey = _configuration["Jwt:Key"];
-                if (string.IsNullOrEmpty(jwtKey))
-                    throw new InvalidOperationException("JWT key is not configured.");
-                
-                var key = Encoding.UTF8.GetBytes(jwtKey);
+            if(string.IsNullOrEmpty(jti))
+                return false;
 
-                var tokenHandler = new JwtSecurityTokenHandler();
-                
-                var jwtToken = tokenHandler.ReadJwtToken(token);
-                var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-
-                if (isTokenBlacklisted(jti!))
-                    return null;
-                
-                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = _configuration["Jwt:Audience"],
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                }, out SecurityToken validatedToken);
-
-                return principal;
-            } catch {
-                return null;
-            }
+            return _cache.TryGetValue($"blacklist:{jti}", out _);
         }
 
         public ObjectId? GetUserIdFromClaims(ClaimsPrincipal principal)
@@ -121,14 +94,6 @@ namespace App.Services
                 return null;
 
             return await UserModel.FindById(userId);
-        }
-
-        private bool isTokenBlacklisted(string jti)
-        {
-            if(string.IsNullOrEmpty(jti))
-                return false;
-
-            return _cache.TryGetValue($"blacklist:{jti}", out _);
         }
     }
 }

@@ -27,13 +27,9 @@ namespace App.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var userId = _jwtService.GetUserIdFromClaims(User);
-                if (userId == null)
-                    return Unauthorized(new { message = "User not authenticated" });
-                
-                var user = await UserModel.FindById(userId);
+                var user = HttpContext.Items["User"] as UserModel;
                 if (user == null)
-                    return Unauthorized(new { message = "User not found" });
+                    return Unauthorized(new { message = "User not authenticated" });
 
                 await user.UpdatePassword(request.CurrentPassword, request.NewPassword);
                 return Ok(new { 
@@ -53,7 +49,7 @@ namespace App.Controllers
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _jwtService.GetUserFromClaims(User);
+            var user = HttpContext.Items["User"] as UserModel;
             if(user == null)
                 return Unauthorized(new { message = "User not authenticated" });
 

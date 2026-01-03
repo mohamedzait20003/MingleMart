@@ -2,17 +2,16 @@ using RazorEngineCore;
 
 namespace App.Mailers
 {
-    public class EVerifyMailer : Mailer
+    public class EPassMailer : Mailer
     {
         private readonly string _toEmail;
 
-
-        public EVerifyMailer(
+        public EPassMailer(
             string toEmail,
             string firstName,
             string lastName,
-            string verificationUrl,
-            IRazorEngine razorEngine, 
+            string resetUrl,
+            IRazorEngine razorEngine,
             IWebHostEnvironment environment
         ) : base(razorEngine, environment)
         {
@@ -20,13 +19,13 @@ namespace App.Mailers
 
             With("FirstName", firstName);
             With("LastName", lastName);
-            With("VerificationUrl", verificationUrl);
+            With("ResetUrl", resetUrl);
         }
 
         public override MailContent Content()
         {
             return new MailContent {
-                View = "EVerifyTemplate"
+                View = "EPassTemplate"
             };
         }
 
@@ -34,7 +33,7 @@ namespace App.Mailers
         {
             return new MailEnvelope {
                 To = _toEmail,
-                Subject = "Verify Your Email - Welcome to ZCommerce! 🎉"
+                Subject = "Reset Your Password - ZCommerce"
             };
         }
     }

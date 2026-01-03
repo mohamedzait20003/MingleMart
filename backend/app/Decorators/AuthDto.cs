@@ -52,6 +52,27 @@ namespace App.DTOs
         public required string Token { get; set; }
     }
 
+    public class ForgotPassDto
+    {
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        public required string Email { get; set; }
+    }
+
+    public class ResetPassDto
+    {
+        [Required(ErrorMessage = "Reset token is required")]
+        public required string Token { get; set; }
+
+        [Required(ErrorMessage = "New password is required")]
+        [StringLength(100, ErrorMessage = "Password must be at least 6 characters", MinimumLength = 6)]
+        public required string NewPassword { get; set; }
+
+        [Required(ErrorMessage = "Password confirmation is required")]
+        [Compare("NewPassword", ErrorMessage = "Passwords do not match")]
+        public required string NewPasswordConfirmation { get; set; }
+    }
+
     public class GUserInfo
     {
         public required string Email { get; set; }

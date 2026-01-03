@@ -1,39 +1,21 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-interface User {
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
-}
-
-interface AuthResponse {
-  message: string;
-  data: {
-    token: string;
-    role: string;
-    user: User;
-  };
-}
-
-interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-interface SignupRequest {
-  fName: string;
-  lName: string;
-  username: string;
-  email: string;
-  password: string;
-  passwordConfirmation: string;
-}
+import type { AuthResponse, LoginRequest, SignupRequest, PassForgotRequest, PassForgotResponse } from '../types/authTypes';
+import type { RootState } from '../index';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth`
+    baseUrl: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth`,
+    prepareHeaders: (headers, { getState }) => {
+      const token = (getState() as RootState).auth.token;
+
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      
+      return headers;
+    },
   }),
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
@@ -45,7 +27,7 @@ export const authApi = createApi({
     }),
     signup: builder.mutation<AuthResponse, SignupRequest>({
       query: (data) => ({
-        url: 'signup',
+        url: 'sign-up',
         method: 'POST',
         body: data,
       }),
@@ -57,13 +39,40 @@ export const authApi = createApi({
         body: { idToken },
       }),
     }),
+    resendVerification: builder.mutation<void, void>({
+      query: () => ({
+        url: 'resend-verification',
+        method: 'PUT',
+      }),
+    }),
+    verifyEmail: builder.mutation<void, { token: string }>({
+      query: ({ token }) => ({
+        url: `verify-email`,
+        method: 'PUT',
+        body: { token },
+      }),
+    }),
     logout: builder.mutation<void, void>({
       query: () => ({
         url: 'logout',
         method: 'POST',
       }),
     }),
+    forgotPassword: builder.mutation<PassForgotResponse, PassForgotRequest>({
+      query: (data) => ({
+        url: 'password-forgot',
+        method: 'PUT',
+        body: data,
+      }),
+    }),
+    resetPassword: builder.mutation<void, { token: string; password: string; passwordConfirmation: string }>({
+      query: ({ token, password, passwordConfirmation }) => ({
+        url: 'reset-password',
+        method: 'PUT',
+        body: { token, password, passwordConfirmation },
+      }),
+    }),
   }),
 });
 
-export const { useLoginMutation, useSignupMutation, useGoogleloginMutation, useLogoutMutation } = authApi;
+export const { useLoginMutation, useSignupMutation, useGoogleloginMutation, useResendVerificationMutation, useVerifyEmailMutation, useLogoutMutation, useForgotPasswordMutation, useResetPasswordMutation } = authApi;

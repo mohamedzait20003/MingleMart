@@ -3,63 +3,158 @@
 # ===========================
 .DS_Store
 Thumbs.db
+*.log
 
 # ===========================
-# Backend (.NET / ASP.NET Core)
+# Backend (.NET / ASP.NET Core + Console projects)
 # ===========================
+# Build artifacts (main project + console apps)
 backend/bin/
 backend/obj/
+backend/console/**/bin/
+backend/console/**/obj/
+backend/**/publish/
+backend/**/[Bb]in/
+backend/**/[Oo]bj/
+backend/**/[Pp]ublish/
+
+# NuGet restore files
+backend/**/*.nuget.dgspec.json
+backend/**/*.nuget.g.props
+backend/**/*.nuget.g.targets
+backend/**/project.assets.json
+backend/**/project.fragment.lock.json
+backend/**/project.lock.json
+
+# Visual Studio / Rider
 backend/.vs/
-backend/*.user
-backend/*.suo
-backend/*.pidb
-backend/*.ide/
-backend/*.secrets.json
+backend/.vscode/
+backend/.idea/
+backend/**/*.user
+backend/**/*.suo
+backend/**/*.userosscache
+backend/**/*.sln.docstates
+backend/**/*.pidb
+backend/**/*.userprefs
+backend/**/.idea/
 
-# Ignore backend publish artifacts
-backend/bin/Release/
-backend/bin/Debug/
-# (Optional: uncomment if you want to ignore publish output)
-# backend/bin/Release/net*/publish/
+# User-specific files
+*.rsuser
+backend/**/*.sln.iml
 
-# Ignore secrets and environment config
+# Runtime files
+backend/**/*.dll
+backend/**/*.exe
+backend/**/*.pdb
+backend/**/*.deps.json
+backend/**/*.runtimeconfig.json
+backend/**/*.staticwebassets.runtime.json
+backend/**/*.staticwebassets.endpoints.json
+
+# Environment and secrets
 backend/.env
-backend/appsettings.Development.json
-backend/appsettings.Production.json
-backend/appsettings.Staging.json
-backend/appsettings.*.json
-!backend/appsettings.json
+backend/.env.*
+backend/**/*.secrets.json
+
+# Production-specific configs (keep Development for team consistency)
+backend/**/appsettings.Production.json
+backend/**/appsettings.Staging.json
+
+# Database files
+backend/**/database/migrations/*.sql
+backend/**/*.db
+backend/**/*.db-shm
+backend/**/*.db-wal
+
+# NuGet packages
+backend/**/packages/
+*.nupkg
+*.snupkg
 
 # ===========================
 # Frontend (React / CRA)
 # ===========================
+# Dependencies
 frontend/node_modules/
+frontend/.pnp/
+frontend/.pnp.js
+
+# Build output
 frontend/build/
+frontend/out/
+
+# Environment files
 frontend/.env
 frontend/.env.*
+!frontend/.env.example
+
+# Testing
 frontend/coverage/
+frontend/.nyc_output/
+
+# Logs
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Editor
+frontend/.vscode/
+frontend/.idea/
+frontend/*.swp
+frontend/*.swo
+frontend/*~
+
+# Misc
 frontend/.DS_Store
 frontend/Thumbs.db
 
 # ===========================
-# Frontend (Vite)
+# New Frontend (Vite + TypeScript)
 # ===========================
+# Dependencies
 new-frontend/node_modules/
+new-frontend/.pnp/
+new-frontend/.pnp.js
+
+# Build output
 new-frontend/dist/
+new-frontend/build/
+new-frontend/out/
+
+# Environment files
 new-frontend/.env
 new-frontend/.env.*
+!new-frontend/.env.example
+
+# Testing
 new-frontend/coverage/
+new-frontend/.nyc_output/
+
+# Logs
 new-frontend/npm-debug.log*
 new-frontend/yarn-debug.log*
 new-frontend/yarn-error.log*
 new-frontend/pnpm-debug.log*
+new-frontend/lerna-debug.log*
+
+# Vite specific
+new-frontend/.vite/
 new-frontend/.turbo/
 new-frontend/.parcel-cache/
-new-frontend/.vite/
 new-frontend/.next/
+
+# Editor
+new-frontend/.vscode/
+new-frontend/.idea/
+new-frontend/*.swp
+new-frontend/*.swo
+new-frontend/*~
+
+# Misc
 new-frontend/.DS_Store
 new-frontend/Thumbs.db
+
+# TypeScript
+new-frontend/*.tsbuildinfo

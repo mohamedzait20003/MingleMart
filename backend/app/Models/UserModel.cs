@@ -65,28 +65,41 @@ namespace App.Models
 
         public async Task<VTokenModel> GenerateVerifyToken()
         {
-            var token = new VTokenModel
-            {
-                UserId = this.Id,
-                Token = Guid.NewGuid().ToString(),
-                ExpiresAt = DateTime.UtcNow.AddHours(24)
-            };
-
-            await token.Save();
-            return token;
+            return await VTokenModel.UpdateOrCreate(
+                filter: x => x.UserId == this.Id,
+                updates: new Dictionary<string, object>
+                {
+                    { "UserId", this.Id },
+                    { "Token", Guid.NewGuid().ToString() },
+                    { "ExpiresAt", DateTime.UtcNow.AddHours(24) }
+                }
+            );
         }
 
         public async Task<RTokenModel> GenerateRefreshToken()
         {
-            var token = new RTokenModel
-            {
-                UserId = this.Id,
-                Token = Guid.NewGuid().ToString(),
-                ExpiresAt = DateTime.UtcNow.AddHours(24)
-            };
+            return await RTokenModel.UpdateOrCreate(
+                filter: x => x.UserId == this.Id,
+                updates: new Dictionary<string, object>
+                {
+                    { "UserId", this.Id },
+                    { "Token", Guid.NewGuid().ToString() },
+                    { "ExpiresAt", DateTime.UtcNow.AddHours(24) }
+                }
+            );
+        }
 
-            await token.Save();
-            return token;
+        public async Task<PTokenModel> GeneratePasswordToken()
+        {
+            return await PTokenModel.UpdateOrCreate(
+                filter: x => x.UserId == this.Id,
+                updates: new Dictionary<string, object>
+                {
+                    { "UserId", this.Id },
+                    { "Token", Guid.NewGuid().ToString() },
+                    { "ExpiresAt", DateTime.UtcNow.AddHours(24) }
+                }
+            );
         }
 
         public async Task<bool> InvokeRefreshToken()
@@ -108,6 +121,13 @@ namespace App.Models
                 throw new UnauthorizedAccessException("Old password is incorrect.");
 
             this.Password = HashPassword(newPassword);
+            return await this.Save();
+        }
+
+        public async Task<UserModel> ResetPassword(string newPassword)
+        {
+            this.Password = HashPassword(newPassword);
+            await PTokenModel.DeleteByUserId(this.Id);
             return await this.Save();
         }
 
@@ -136,7 +156,16 @@ namespace App.Models
                 RoleID = defaultRoleId ?? ObjectId.Empty;
             }
 
-            return await base.Save();
+            try {
+                return await base.Save();
+            } catch (MongoWriteException mwx) when (mwx.WriteError.Category == ServerErrorCategory.DuplicateKey) {
+                if (mwx.Message.Contains("EmailIndex"))
+                    throw new InvalidOperationException("Email already in use.");
+                else if (mwx.Message.Contains("UsernameIndex"))
+                    throw new InvalidOperationException("Username already in use.");
+                else
+                    throw;
+            }
         }
 
         public async Task<RoleModel?> GetRole()
@@ -150,6 +179,23 @@ namespace App.Models
                 if (Collection is null)
                     throw new InvalidOperationException($"Collection for {typeof(UserModel).Name} is not initialized.");
                 
+                var emailIndexKeysDefinition = Builders<UserModel>.IndexKeys.Ascending(x => x.Email);
+                var emailIndexOptions = new CreateIndexOptions {
+                    Unique = true,
+                    Name = "EmailIndex"
+                };
+
+                var emailIndexModel = new CreateIndexModel<UserModel>(emailIndexKeysDefinition, emailIndexOptions);
+
+                var usernameIndexKeysDefinition = Builders<UserModel>.IndexKeys.Ascending(x => x.Username);
+                var usernameIndexOptions = new CreateIndexOptions {
+                    Unique = true,
+                    Name = "UsernameIndex"
+                };
+
+                var usernameIndexModel = new CreateIndexModel<UserModel>(usernameIndexKeysDefinition, usernameIndexOptions);
+
+
                 var roleIndexKeysDefinition = Builders<UserModel>.IndexKeys.Ascending(x => x.RoleID);
                 var roleIndexOptions = new CreateIndexOptions {
                     Unique = false,
@@ -157,6 +203,9 @@ namespace App.Models
                 };
 
                 var roleIndexModel = new CreateIndexModel<UserModel>(roleIndexKeysDefinition, roleIndexOptions);
+                
+                await Collection.Indexes.CreateOneAsync(emailIndexModel);
+                await Collection.Indexes.CreateOneAsync(usernameIndexModel);
                 await Collection.Indexes.CreateOneAsync(roleIndexModel);
             } catch (Exception ex) {
                 Console.WriteLine($"Error creating indexes for UserModel: {ex.Message}");

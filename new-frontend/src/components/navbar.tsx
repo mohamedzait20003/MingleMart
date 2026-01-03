@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 
 import { CircularProgress } from '@mui/material';
-import { Search, ShoppingCart, PersonOutline, Menu, Close, Dashboard, Logout } from '@mui/icons-material';
+import { ShoppingCart, PersonOutline, Menu, Close, Dashboard, Logout } from '@mui/icons-material';
 
 import type { RootState } from '../store';
 import { useLogoutMutation } from '../store/apis/authApi';
@@ -109,18 +109,6 @@ const Navbar: FC = () => {
               </>
             )}
           </div>
-          {isAuthenticated && role === 'Customer' && (
-            <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              </div>
-            </div>
-          )}
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
@@ -213,19 +201,7 @@ const Navbar: FC = () => {
           </div>
         </div>
 
-        {/* Mobile Search - Only for Customers and unauthenticated */}
-        {isAuthenticated && role === 'Customer' && (
-          <div className="md:hidden pb-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            </div>
-          </div>
-        )}
+        {/* Mobile search bar removed for customer */}
       </div>
 
       {/* Mobile Menu */}

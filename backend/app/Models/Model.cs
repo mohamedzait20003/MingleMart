@@ -87,35 +87,55 @@ namespace App.Models
             return (T)this;
         }
 
-        public static async Task<T> Create(T model)
+        public async Task<T> Update(Dictionary<string, object> updates)
         {
             if (Collection is null)
                 throw new InvalidOperationException($"Collection for {typeof(T).Name} is not initialized.");
             
-            if (model.Id == ObjectId.Empty)
-            {
-                model.Id = ObjectId.GenerateNewId();
-            }
+            if (updates == null || updates.Count == 0)
+                return (T)this;
             
-            model.CreatedAt = DateTime.UtcNow;
-            model.UpdatedAt = DateTime.UtcNow;
-            await Collection.InsertOneAsync(model);
-            return model;
+            var updateDefinitions = updates
+                .Select(kvp => Builders<T>.Update.Set(kvp.Key, kvp.Value))
+                .ToList();
+
+            updateDefinitions.Add(Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow));
+
+            var combinedUpdate = Builders<T>.Update.Combine(updateDefinitions);
+            
+            var options = new FindOneAndUpdateOptions<T>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
+            
+            return await Collection.FindOneAndUpdateAsync(x => x.Id == this.Id, combinedUpdate, options);
         }
 
-        public async Task<bool> Update(UpdateDefinition<T> update)
+
+        public static async Task<T> UpdateOrCreate(Expression<Func<T, bool>> filter, Dictionary<string, object> updates)
         {
             if (Collection is null)
                 throw new InvalidOperationException($"Collection for {typeof(T).Name} is not initialized.");
+
+            if (updates == null || updates.Count == 0)
+                throw new ArgumentException("Updates dictionary cannot be null or empty.", nameof(updates));
+
+            var updateDefinitions = updates.Select(kvp => Builders<T>.Update.Set(kvp.Key, kvp.Value)).ToList();
+
+            updateDefinitions.Add(Builders<T>.Update.SetOnInsert(x => x.CreatedAt, DateTime.UtcNow));
+            updateDefinitions.Add(Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow));
             
-            var updateWithTimestamp = Builders<T>.Update.Combine(
-                update,
-                Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
-            );
+            var combinedUpdate = Builders<T>.Update.Combine(updateDefinitions);
+
+            var options = new FindOneAndUpdateOptions<T>
+            {
+                IsUpsert = true,
+                ReturnDocument = ReturnDocument.After
+            };
             
-            var result = await Collection.UpdateOneAsync(x => x.Id == Id, updateWithTimestamp);
-            return result.ModifiedCount > 0;
+            return await Collection.FindOneAndUpdateAsync(filter, combinedUpdate, options);
         }
+
 
         public async Task<bool> Delete()
         {

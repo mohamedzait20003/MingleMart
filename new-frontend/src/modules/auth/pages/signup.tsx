@@ -5,7 +5,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-toastify';
 
 import { Visibility, VisibilityOff, PersonOutline, EmailOutlined, LockOutlined, ArrowForward } from '@mui/icons-material';
-import { Box, TextField, Button, Typography, Container, Paper, InputAdornment, IconButton, Checkbox, FormControlLabel, Alert, Divider, CircularProgress, Link, Fade, Chip, Stack } from '@mui/material';
+import { Box, TextField, Button, Typography, Container, Paper, InputAdornment, IconButton, Checkbox, FormControlLabel, Alert, Divider, CircularProgress, Link, Fade, Stack } from '@mui/material';
 
 import { useSignupMutation, useGoogleloginMutation } from '../../../store/apis/authApi';
 
@@ -59,7 +59,7 @@ const SignUp: FC = () => {
       }).unwrap();
 
       toast.success('Signup successful! Please verify your email.');
-      navigate('/authenticate/verify');
+      navigate('/authenticate/account-verify');
     } catch (err) {
       console.error('Signup failed:', err);
       toast.error('Signup failed. Please try again.');
@@ -72,7 +72,7 @@ const SignUp: FC = () => {
 
       await googlelogin({ idToken }).unwrap();
       toast.success('Signed in with Google!');
-      navigate('/shop');
+      navigate('/customer');
     } catch (err) {
       console.error('Google login failed:', err);
       toast.error('Google login failed. Please try again.');
@@ -105,30 +105,23 @@ const SignUp: FC = () => {
             <Typography variant="body1" color="text.secondary">
               Join thousands of happy shoppers today
             </Typography>
-            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
-              <Chip label="Free Shipping" size="small" color="primary" variant="outlined" />
-              <Chip label="Secure Checkout" size="small" color="secondary" variant="outlined" />
-            </Stack>
           </Box>
         </Fade>
         <Fade in timeout={700}>
-          <Paper 
-            elevation={6} 
-            sx={{ 
-              p: { xs: 3, md: 4 }, 
+          <Paper
+            elevation={6}
+            sx={{
+              p: { xs: 3, md: 4 },
               borderRadius: 3,
               background: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(10px)',
             }}
           >
-            {/* Server Error Display */}
             {error && (
               <Alert severity="error" sx={{ mb: 3 }}>
                 {(error as any)?.data?.message || 'Signup failed. Please try again.'}
               </Alert>
             )}
-
-            {/* Google Login Button */}
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
@@ -139,60 +132,57 @@ const SignUp: FC = () => {
                 shape="rectangular"
               />
             </Box>
-
             <Divider sx={{ my: 3 }}>
               <Typography variant="body2" color="text.secondary">
                 Or sign up with email
               </Typography>
             </Divider>
-
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack spacing={2.5} alignItems="center">
-                {/* First Name */}
-                <Controller
-                  name="fName"
-                  control={control}
-                  rules={{
-                    required: 'First name is required',
-                    minLength: { value: 2, message: 'Minimum 2 characters required' },
-                    maxLength: { value: 100, message: 'Maximum 100 characters allowed' },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="First Name"
-                      fullWidth
-                      error={!!errors.fName}
-                      helperText={errors.fName?.message}
-                      placeholder="John"
-                      variant="outlined"
-                    />
-                  )}
-                />
+                {/* First Name and Last Name in the same row */}
+                <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+                  <Controller
+                    name="fName"
+                    control={control}
+                    rules={{
+                      required: 'First name is required',
+                      minLength: { value: 2, message: 'Minimum 2 characters required' },
+                      maxLength: { value: 100, message: 'Maximum 100 characters allowed' },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="First Name"
+                        fullWidth
+                        error={!!errors.fName}
+                        helperText={errors.fName?.message}
+                        placeholder="John"
+                        variant="outlined"
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="lName"
+                    control={control}
+                    rules={{
+                      required: 'Last name is required',
+                      minLength: { value: 2, message: 'Minimum 2 characters required' },
+                      maxLength: { value: 100, message: 'Maximum 100 characters allowed' },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Last Name"
+                        fullWidth
+                        error={!!errors.lName}
+                        helperText={errors.lName?.message}
+                        placeholder="Doe"
+                        variant="outlined"
+                      />
+                    )}
+                  />
+                </Stack>
 
-                {/* Last Name */}
-                <Controller
-                  name="lName"
-                  control={control}
-                  rules={{
-                    required: 'Last name is required',
-                    minLength: { value: 2, message: 'Minimum 2 characters required' },
-                    maxLength: { value: 100, message: 'Maximum 100 characters allowed' },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Last Name"
-                      fullWidth
-                      error={!!errors.lName}
-                      helperText={errors.lName?.message}
-                      placeholder="Doe"
-                      variant="outlined"
-                    />
-                  )}
-                />
-
-                {/* Username */}
                 <Controller
                   name="username"
                   control={control}
@@ -214,18 +204,23 @@ const SignUp: FC = () => {
                       helperText={errors.username?.message}
                       placeholder="johndoe"
                       variant="outlined"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <PersonOutline color="action" />
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonOutline color="action" />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          paddingLeft: '8px',
+                        },
                       }}
                     />
                   )}
                 />
-
-                {/* Email */}
                 <Controller
                   name="email"
                   control={control}
@@ -246,18 +241,23 @@ const SignUp: FC = () => {
                       helperText={errors.email?.message}
                       placeholder="john@example.com"
                       variant="outlined"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <EmailOutlined color="action" />
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <EmailOutlined color="action" />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          paddingLeft: '8px',
+                        },
                       }}
                     />
                   )}
                 />
-
-                {/* Password */}
                 <Controller
                   name="password"
                   control={control}
@@ -276,29 +276,34 @@ const SignUp: FC = () => {
                       helperText={errors.password?.message || 'Must be at least 6 characters'}
                       placeholder="••••••••"
                       variant="outlined"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockOutlined color="action" />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
-                              aria-label="toggle password visibility"
-                            >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LockOutlined color="action" />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                                aria-label="toggle password visibility"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          paddingLeft: '8px',
+                        },
                       }}
                     />
                   )}
                 />
-
-                {/* Confirm Password */}
                 <Controller
                   name="passwordConfirmation"
                   control={control}
@@ -316,29 +321,34 @@ const SignUp: FC = () => {
                       helperText={errors.passwordConfirmation?.message}
                       placeholder="••••••••"
                       variant="outlined"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockOutlined color="action" />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              edge="end"
-                              aria-label="toggle password confirmation visibility"
-                            >
-                              {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LockOutlined color="action" />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                edge="end"
+                                aria-label="toggle password confirmation visibility"
+                              >
+                                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          paddingLeft: '8px',
+                        },
                       }}
                     />
                   )}
                 />
-
-                {/* Terms and Conditions */}
                 <Box sx={{ width: '100%' }}>
                   <Controller
                     name="terms"
@@ -370,8 +380,6 @@ const SignUp: FC = () => {
                     )}
                   />
                 </Box>
-
-                {/* Submit Button */}
                 <Button
                   type="submit"
                   variant="contained"
@@ -396,15 +404,11 @@ const SignUp: FC = () => {
                 </Button>
               </Stack>
             </form>
-
-            {/* Divider */}
             <Divider sx={{ my: 3 }}>
               <Typography variant="body2" color="text.secondary">
                 Already have an account?
               </Typography>
             </Divider>
-
-            {/* Login Link */}
             <Box sx={{ textAlign: 'center' }}>
               <Button
                 component={RouterLink}
@@ -412,7 +416,7 @@ const SignUp: FC = () => {
                 variant="outlined"
                 color="primary"
                 fullWidth
-                sx={{ 
+                sx={{
                   py: 1,
                   borderWidth: 2,
                   '&:hover': { borderWidth: 2 }

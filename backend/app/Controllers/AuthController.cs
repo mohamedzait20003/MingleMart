@@ -5,7 +5,6 @@ using App.Services;
 using RazorEngineCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Org.BouncyCastle.Ocsp;
 
 namespace App.Controllers
 {
@@ -18,12 +17,14 @@ namespace App.Controllers
         private readonly IEmailService _emailService;
         private readonly GoogleService _googleService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IConfiguration _configuration;
         
         public AuthController(
             JwtService jwtService, 
             IRazorEngine razorEngine, 
             IEmailService emailService, 
             GoogleService googleService,
+            IConfiguration configuration,
             IWebHostEnvironment environment
         )
         {
@@ -32,6 +33,7 @@ namespace App.Controllers
             _emailService = emailService;
             _googleService = googleService;
             _environment = environment;
+            _configuration = configuration;
         }
 
         [HttpPost("sign-up")]
@@ -61,13 +63,13 @@ namespace App.Controllers
             var accessToken = _jwtService.GenerateToken(user);
             var refreshToken = await user.GenerateRefreshToken();
 
-            var verificationUrl = $"{Request.Scheme}://{Request.Host}/verify-email?token={verifyToken.Token}";
+            var frontendUrl = _configuration["Frontend:URL"] ?? "http://localhost:3000";
+            var verificationUrl = $"{frontendUrl}/authenticate/email-verify?token={verifyToken.Token}";
             
             var mailer = new EVerifyMailer(
                 user.Email,
                 user.FirstName,
                 user.LastName,
-                verifyToken.Token,
                 verificationUrl,
                 _razorEngine,
                 _environment
@@ -88,6 +90,7 @@ namespace App.Controllers
                 data = new {
                     token = accessToken,
                     role = (await user.GetRole())?.Name,
+                    isVerified = user.IsVerified,
                     user = new {
                         user.FirstName,
                         user.LastName,
@@ -124,6 +127,7 @@ namespace App.Controllers
                 data = new {
                     token = accessToken,
                     role = (await user.GetRole())?.Name,
+                    isVerified = user.IsVerified,
                     user = new {
                         user.FirstName,
                         user.LastName,
@@ -177,6 +181,7 @@ namespace App.Controllers
                 data = new {
                     token = accessToken,
                     role = (await user.GetRole())?.Name,
+                    isVerified = user.IsVerified,
                     user = new {
                         user.FirstName,
                         user.LastName,
@@ -187,7 +192,84 @@ namespace App.Controllers
             });
         }
 
-        [HttpPost("verify-email")]
+        [HttpPut("resend-verification")]
+        [Authorize]
+        public async Task<IActionResult> ResendVerification()
+        {
+            var user = HttpContext.Items["User"] as UserModel;
+            if (user == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            if (user.IsVerified)
+                return BadRequest(new { message = "Email is already verified" });
+
+            var verifyToken = await user.GenerateVerifyToken();
+
+            var frontendUrl = _configuration["Frontend:URL"] ?? "http://localhost:3000";
+            var verificationUrl = $"{frontendUrl}/authenticate/email-verify?token={verifyToken.Token}";
+            
+            var mailer = new EVerifyMailer(
+                user.Email,
+                user.FirstName,
+                user.LastName,
+                verificationUrl,
+                _razorEngine,
+                _environment
+            );
+
+            await _emailService.SendAsync(mailer);
+
+            return Ok(new { message = "Verification email resent successfully" });
+        }
+
+        [HttpPut("password-forgot")]
+        public async Task<IActionResult> PasswordForgot([FromBody] ForgotPassDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await UserModel.FindByEmail(request.Email);
+            if (user == null)
+                return NotFound(new { message = "User with the provided email does not exist" });
+
+            var pToken = await user.GeneratePasswordToken();
+
+            var frontendUrl = _configuration["Frontend:URL"] ?? "http://localhost:3000";
+            var resetUrl = $"{frontendUrl}/authenticate/password-reset?token={pToken.Token}";
+
+            var mailer = new EPassMailer(
+                user.Email,
+                user.FirstName,
+                user.LastName,
+                resetUrl,
+                _razorEngine,
+                _environment
+            );
+
+            await _emailService.SendAsync(mailer);
+
+            return Ok(new { message = "Password reset email sent successfully" });
+        }
+
+        [HttpPut("password-reset")]
+        public async Task<IActionResult> PasswordReset([FromBody] ResetPassDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var token = await PTokenModel.FindByToken(request.Token);
+            if (token == null || token.ExpiresAt < DateTime.UtcNow)
+                return BadRequest(new { message = "Invalid or expired password reset token" });
+
+            var user = await UserModel.FindById(token.UserId);
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            await user.ResetPassword(request.NewPassword);
+            return Ok(new { message = "Password reset successfully" });
+        }
+
+        [HttpPut("verify-email")]
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
         {
             if (!ModelState.IsValid)
@@ -215,7 +297,7 @@ namespace App.Controllers
         {
             await _jwtService.BlackListToken(User);
 
-            var user = await _jwtService.GetUserFromClaims(User);
+            var user = HttpContext.Items["User"] as UserModel;
            
             if (user == null)
                 return Unauthorized(new { message = "User not authenticated" });
