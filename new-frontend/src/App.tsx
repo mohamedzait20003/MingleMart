@@ -6,14 +6,14 @@ import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 
 const App: FC = () => (
-    <Fragment>
-      <ToastContainer />
-      <Navbar />
-      <main className="min-h-[calc(100vh-128px)]">
-        <Outlet />
-      </main>
-      <Footer />
-    </Fragment>
-)
+  <Fragment>
+    <ToastContainer />
+    <Navbar />
+    <main className="min-h-[calc(100vh-128px)]">
+      <Outlet />
+    </main>
+    <Footer />
+  </Fragment>
+);
 
 export default App

@@ -1,6 +1,6 @@
 import { type FC, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 
@@ -12,6 +12,7 @@ import { useLogoutMutation } from '../store/apis/authApi';
 
 const Navbar: FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [logout, { isLoading }] = useLogoutMutation();
@@ -41,14 +42,14 @@ const Navbar: FC = () => {
                   key={i}
                   className="inline-block"
                   animate={{
-                    y: [0, -12, 0],
+                    y: [0, -8, 0],
                   }}
                   transition={{
-                    duration: 0.8,
+                    duration: 1.2,
                     repeat: Infinity,
-                    repeatDelay: 0.5,
-                    delay: i * 0.08,
-                    ease: "easeInOut"
+                    repeatDelay: 2,
+                    delay: i * 0.1,
+                    ease: [0.34, 1.56, 0.64, 1]
                   }}
                   style={{ display: 'inline-block' }}
                 >
@@ -60,17 +61,49 @@ const Navbar: FC = () => {
           <div className="hidden md:flex items-center space-x-8">
             {!isAuthenticated && (
               <>
-                <Link to="/home" className="text-gray-700 hover:text-blue-600 font-medium transition">
+                <Link to="/home" className={`font-medium transition-colors duration-300 relative ${location.pathname === '/home' || location.pathname === '/' ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}>
                   Home
+                  {(location.pathname === '/home' || location.pathname === '/') && (
+                    <motion.div
+                      layoutId="activeNavUnderline"
+                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-600"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
                 </Link>
-                <Link to="/shop" className="text-gray-700 hover:text-blue-600 font-medium transition">
+                <Link to="/home/shop" className={`font-medium transition-colors duration-300 relative ${location.pathname.startsWith('/home/shop') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}>
                   Shop
+                  {location.pathname.startsWith('/home/shop') && (
+                    <motion.div
+                      layoutId="activeNavUnderline"
+                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-600"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
                 </Link>
-                <Link to="/deals" className="text-gray-700 hover:text-blue-600 font-medium transition">
+                <Link to="/home/deals" className={`font-medium transition-colors duration-300 relative ${location.pathname.startsWith('/home/deals') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}>
                   Deals
+                  {location.pathname.startsWith('/home/deals') && (
+                    <motion.div
+                      layoutId="activeNavUnderline"
+                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-600"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
                 </Link>
-                <Link to="/about" className="text-gray-700 hover:text-blue-600 font-medium transition">
+                <Link to="/company/about" className={`font-medium transition-colors duration-300 relative ${location.pathname.startsWith('/company/about') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}>
                   About
+                  {location.pathname.startsWith('/company/about') && (
+                    <motion.div
+                      layoutId="activeNavUnderline"
+                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-600"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
                 </Link>
               </>
             )}
@@ -218,21 +251,21 @@ const Navbar: FC = () => {
                   Home
                 </Link>
                 <Link
-                  to="/shop"
+                  to="/home/shop"
                   className="block text-gray-700 hover:text-blue-600 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Shop
                 </Link>
                 <Link
-                  to="/deals"
+                  to="/home/deals"
                   className="block text-gray-700 hover:text-blue-600 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Deals
                 </Link>
                 <Link
-                  to="/about"
+                  to="/company/about"
                   className="block text-gray-700 hover:text-blue-600 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >

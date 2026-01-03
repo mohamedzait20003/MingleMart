@@ -1,11 +1,40 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
-import storage from "redux-persist/lib/storage";
+import { persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, type Storage } from "redux-persist";
 
 import authReducer from "./slices/authSlice";
 
 import { authApi } from "./apis/authApi";
 
+// SSR-safe storage - use a no-op storage on server
+const createNoopStorage = (): Storage => {
+    return {
+        getItem() {
+            return Promise.resolve(null);
+        },
+        setItem(_key: string, value: string) {
+            return Promise.resolve(value);
+        },
+        removeItem() {
+            return Promise.resolve();
+        },
+    };
+};
+
+const isServer = typeof window === "undefined";
+
+const storage: Storage = isServer ? createNoopStorage() : {
+    getItem(key: string) {
+        return Promise.resolve(localStorage.getItem(key));
+    },
+    setItem(key: string, value: string) {
+        localStorage.setItem(key, value);
+        return Promise.resolve(value);
+    },
+    removeItem(key: string) {
+        localStorage.removeItem(key);
+        return Promise.resolve();
+    },
+};
 
 const authpersistConfig = {
     key: "auth",
@@ -28,8 +57,6 @@ const store = configureStore({
             },
         }).concat(authApi.middleware),
 });
-
-export const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

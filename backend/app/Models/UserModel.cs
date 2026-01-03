@@ -39,7 +39,6 @@ namespace App.Models
         public static void Initialize(DatabaseService dbService)
         {
             Collection = dbService.GetCollection<UserModel>("users");
-            CreateIndexes().Wait();
         }
 
         public static async Task<UserModel?> FindByEmail(string email)
@@ -171,45 +170,6 @@ namespace App.Models
         public async Task<RoleModel?> GetRole()
         {
             return await RoleModel.FindById(RoleID);
-        }
-
-        private static async Task CreateIndexes()
-        {
-            try {
-                if (Collection is null)
-                    throw new InvalidOperationException($"Collection for {typeof(UserModel).Name} is not initialized.");
-                
-                var emailIndexKeysDefinition = Builders<UserModel>.IndexKeys.Ascending(x => x.Email);
-                var emailIndexOptions = new CreateIndexOptions {
-                    Unique = true,
-                    Name = "EmailIndex"
-                };
-
-                var emailIndexModel = new CreateIndexModel<UserModel>(emailIndexKeysDefinition, emailIndexOptions);
-
-                var usernameIndexKeysDefinition = Builders<UserModel>.IndexKeys.Ascending(x => x.Username);
-                var usernameIndexOptions = new CreateIndexOptions {
-                    Unique = true,
-                    Name = "UsernameIndex"
-                };
-
-                var usernameIndexModel = new CreateIndexModel<UserModel>(usernameIndexKeysDefinition, usernameIndexOptions);
-
-
-                var roleIndexKeysDefinition = Builders<UserModel>.IndexKeys.Ascending(x => x.RoleID);
-                var roleIndexOptions = new CreateIndexOptions {
-                    Unique = false,
-                    Name = "RoleIDIndex"
-                };
-
-                var roleIndexModel = new CreateIndexModel<UserModel>(roleIndexKeysDefinition, roleIndexOptions);
-                
-                await Collection.Indexes.CreateOneAsync(emailIndexModel);
-                await Collection.Indexes.CreateOneAsync(usernameIndexModel);
-                await Collection.Indexes.CreateOneAsync(roleIndexModel);
-            } catch (Exception ex) {
-                Console.WriteLine($"Error creating indexes for UserModel: {ex.Message}");
-            }
         }
 
         private static bool IsHashed(string password)

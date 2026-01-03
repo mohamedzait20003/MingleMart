@@ -1,19 +1,44 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, type RouteObject } from 'react-router-dom';
+import { type RouteObject } from 'react-router-dom';
 
+// Route Guards
 import Redirect from './redirect';
 import Protected from './protected';
 
+// Components
 import LoadingFallback from '../components/lfallback';
 
-const App = lazy(() => import('../App'));
+import App from '../App';
 
-const Landing = lazy(() => import('../modules/landing/main'));
-const Authenticate = lazy(() => import('../modules/auth/authenticate'));
-const Customer = lazy(() => import('../modules/customer/customer'));
 
-const LHome = lazy(() => import('../modules/landing/pages/home'));
+// SSR Modules and Pages
+import Landing from '../modules/landing/main';
+import Company from '../modules/company/main';
 
+// Landing Pages
+import LHome from '../modules/landing/pages/home';
+import LShop from '../modules/landing/pages/shop';
+import LDeals from '../modules/landing/pages/deals';
+
+// Company Pages
+import About from '../modules/company/pages/about';
+import Terms from '../modules/company/pages/terms';
+import Privacy from '../modules/company/pages/privacy';
+import Careers from '../modules/company/pages/careers';
+
+
+// CSR Modules and Pages
+const Admin = lazy(() => import('../modules/admin/main'));
+const Profile = lazy(() => import('../modules/profile/main'));
+const Authenticate = lazy(() => import('../modules/auth/main'));
+const Customer = lazy(() => import('../modules/customer/main'));
+
+// Admin Pages
+const Users = lazy(() => import('../modules/admin/pages/users'));
+const Products = lazy(() => import('../modules/admin/pages/products'));
+const Dashboard = lazy(() => import('../modules/admin/pages/dashboard'));
+
+// Auth Pages
 const Login = lazy(() => import('../modules/auth/pages/login'));
 const SignUp = lazy(() => import('../modules/auth/pages/signup'));
 const EmaVerify = lazy(() => import('../modules/auth/pages/emaverify'));
@@ -22,13 +47,15 @@ const PassForgot = lazy(() => import('../modules/auth/pages/passforgot'));
 const PassChange = lazy(() => import('../modules/auth/pages/passchange'));
 const PassConfirm = lazy(() => import('../modules/auth/pages/passconfirm'));
 
-const routes: RouteObject[] = [{
+// Customer Pages
+const Cart = lazy(() => import('../modules/customer/pages/cart'));
+const CShop = lazy(() => import('../modules/customer/pages/shop'));
+const CDeals = lazy(() => import('../modules/customer/pages/deals'));
+const Orders = lazy(() => import('../modules/customer/pages/orders'));
+
+export const routes: RouteObject[] = [{
     path: '/',
-    element: (
-        <Suspense fallback={<LoadingFallback />}>
-            <App />
-        </Suspense>
-    ),
+    element:  <App />,
     children: [
         {
             index: true,
@@ -40,12 +67,16 @@ const routes: RouteObject[] = [{
             children: [
                 {
                     index: true,
-                    element: (
-                        <Suspense fallback={<LoadingFallback />}>
-                            <LHome />
-                        </Suspense>
-                    )
+                    element: <LHome />
                 },
+                {
+                    path: 'shop',
+                    element: <LShop />
+                },
+                {
+                    path: 'deals',
+                    element: <LDeals />
+                }
             ],
         },
         {
@@ -117,6 +148,40 @@ const routes: RouteObject[] = [{
             ]
         },
         {
+            path: 'company',
+            element:  <Company />,
+            children: [
+                {
+                    path: 'about',
+                    element: <About />
+                },
+                {
+                    path: 'terms',
+                    element: <Terms />
+                },
+                {
+                    path: 'privacy',
+                    element: <Privacy />
+                },
+                {
+                    path: 'careers',
+                    element: <Careers />
+                },
+            ],
+        },
+        {
+            path: 'profile',
+            element: (
+                <Suspense fallback={<LoadingFallback />}>
+                    <Protected Roles={["Customer", "Admin", "Moderator"]}>
+                        <Profile /> 
+                    </Protected>
+                </Suspense>
+            ),
+            children: [
+            ],
+        },
+        {
             path: 'customer',
             element: (
                 <Suspense fallback={<LoadingFallback />}>
@@ -126,6 +191,38 @@ const routes: RouteObject[] = [{
                 </Suspense>
             ),
             children: [
+                {
+                    path: 'shop',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <CShop />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'deals',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <CDeals />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'cart',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Cart />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'orders',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Orders />
+                        </Suspense>
+                    )
+                }
             ],
         },
         {
@@ -141,14 +238,38 @@ const routes: RouteObject[] = [{
             path: 'admin',
             element: (
                 <Suspense fallback={<LoadingFallback />}>
+                    <Protected Roles={["Admin"]}>
+                        <Admin />
+                    </Protected>
                 </Suspense>
             ),
             children: [
+                {
+                    index: true,
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Dashboard />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'users',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Users />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'products',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Products />
+                        </Suspense>
+                    )
+                }
+
             ],
         }
     ],
 }];
-
-const router = createBrowserRouter(routes);
-
-export default router;
