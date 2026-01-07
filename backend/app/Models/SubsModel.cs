@@ -12,7 +12,7 @@ namespace App.Models
 
         public static void Initialize(DatabaseService dbService)
         {
-            Collection = dbService.GetCollection<SubsModel>("newsLetters");
+            Collection = dbService.GetCollection<SubsModel>("NewsLetters");
         }
 
         public override async Task<SubsModel> Save()

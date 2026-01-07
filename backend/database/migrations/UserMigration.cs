@@ -34,6 +34,27 @@ namespace Database.Migrations
         [BsonElement("2FaEnabled")]
         public bool FaEnabled { get; set; } = false;
 
+        [BsonElement("Gender")]
+        public string Gender { get; set; } = string.Empty;
+
+        [BsonElement("DateOfBirth")]
+        public DateTime DateOfBirth { get; set; }
+
+        [BsonElement("IsActivityTracked")]
+        public bool IsActivityTracked { get; set; } = true;
+
+        [BsonElement("IsDataShared")]
+        public bool IsDataShared { get; set; } = false;
+
+        [BsonElement("IsEmailNotified")]
+        public bool IsEmailNotified { get; set; } = true;
+
+        [BsonElement("IsSecurityNotified")]
+        public bool IsSecurityNotified { get; set; } = true;
+
+        [BsonElement("IsUpdateNotified")]
+        public bool IsUpdateNotified { get; set; } = true;
+
         [BsonElement("RoleID")]
         [BsonRepresentation(BsonType.ObjectId)]
         public ObjectId RoleID { get; set; }
@@ -57,7 +78,7 @@ namespace Database.Migrations
         public UserMigration(IMongoDatabase database)
         {
             _database = database;
-            _collection = database.GetCollection<UserDocument>("users");
+            _collection = database.GetCollection<UserDocument>("Users");
         }
 
         public async Task MigrateAsync()

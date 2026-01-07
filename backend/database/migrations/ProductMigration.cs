@@ -48,7 +48,7 @@ namespace Database.Migrations
         public ProductMigration(IMongoDatabase database)
         {
             _database = database;
-            _collection = database.GetCollection<ProductDocument>("products");
+            _collection = database.GetCollection<ProductDocument>("Products");
         }
 
         public async Task MigrateAsync()

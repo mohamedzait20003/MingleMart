@@ -2,8 +2,10 @@ import { configureStore } from "@reduxjs/toolkit";
 import { persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, type Storage } from "redux-persist";
 
 import authReducer from "./slices/authSlice";
+import userReducer from "./slices/userSlice";
 
-import { authApi } from "./apis/authApi";
+import authApi from "./apis/authApi";
+import userApi from "./apis/userApi";
 
 // SSR-safe storage - use a no-op storage on server
 const createNoopStorage = (): Storage => {
@@ -36,26 +38,34 @@ const storage: Storage = isServer ? createNoopStorage() : {
     },
 };
 
-const authpersistConfig = {
+const authPersistConfig = {
     key: "auth",
     storage,
-    whitelist: ["token", "user", "role", "isAuthenticated"],
+    whitelist: ["token", "role", "isVerified", "isAuthenticated"],
 };
 
-const persistedAuthReducer = persistReducer(authpersistConfig, authReducer);
+const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 
+const userPersistConfig = {
+    key: "user",
+    storage,
+};
+
+const persistedUserReducer = persistReducer(userPersistConfig, userReducer);
 
 const store = configureStore({
     reducer: {
         auth: persistedAuthReducer,
+        user: persistedUserReducer,
         [authApi.reducerPath]: authApi.reducer,
+        [userApi.reducerPath]: userApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
             serializableCheck: {
                 ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
             },
-        }).concat(authApi.middleware),
+        }).concat(authApi.middleware, userApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

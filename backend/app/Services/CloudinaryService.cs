@@ -12,36 +12,82 @@ namespace App.Services
     public class CloudinaryService
     {
         private readonly Cloudinary _cloudinary;
+        private readonly ILogger<CloudinaryService> _logger;
 
-        public CloudinaryService(IConfiguration configuration)
+        public CloudinaryService(IConfiguration configuration, ILogger<CloudinaryService> logger)
         {
+            _logger = logger;
             var cloudinaryUrl = configuration["CLOUDINARY:URI"];
+            
             if (string.IsNullOrEmpty(cloudinaryUrl))
+            {
+                _logger.LogError("CLOUDINARY:URI configuration is missing or empty");
                 throw new ArgumentNullException(nameof(cloudinaryUrl), "CLOUDINARY_URL configuration is missing.");
+            }
+            
+            try
+            {
+                // Parse the URL to validate it
+                var urlWithoutScheme = cloudinaryUrl.Replace("cloudinary://", "");
+                var parts = urlWithoutScheme.Split('@');
+                var cloudName = parts.Length > 1 ? parts[1] : null;
+                var credsPart = parts.Length > 0 ? parts[0].Split(':') : new string[0];
+                var apiKey = credsPart.Length > 0 ? credsPart[0] : null;
+                var apiSecret = credsPart.Length > 1 ? credsPart[1] : null;
                 
-            var account = new Account(cloudinaryUrl);
-            _cloudinary = new Cloudinary(account);
-            _cloudinary.Api.Secure = true;
+                _logger.LogInformation("Initializing Cloudinary - Cloud: {CloudName}, API Key: {ApiKey}, Has Secret: {HasSecret}", 
+                    cloudName, apiKey, !string.IsNullOrEmpty(apiSecret));
+                
+                if (string.IsNullOrEmpty(cloudName) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiSecret))
+                {
+                    throw new ArgumentException("Invalid Cloudinary URL format. Expected: cloudinary://api_key:api_secret@cloud_name");
+                }
+                    
+                var account = new Account(cloudName, apiKey, apiSecret);
+                _cloudinary = new Cloudinary(account);
+                _cloudinary.Api.Secure = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to initialize Cloudinary with URL: {Url}", cloudinaryUrl);
+                throw;
+            }
         }
 
         public async Task<string> UploadImageAsync(IFormFile imageFile)
         {
-            var validatedImage = ValidateImage(imageFile);
+            try {
+                var validatedImage = await ValidateImageAsync(imageFile);
 
-            var uploadParams = new ImageUploadParams()
-            {
-                File = new FileDescription(validatedImage.fileName, validatedImage.fileStream),
-                Folder = "zcommerce",
-                UniqueFilename = true,
-                Transformation = new Transformation().Quality("auto").FetchFormat("auto"),
-                AllowedFormats = new string[] { "jpg", "jpeg", "png", "gif", "bmp", "webp" }
-            };
+                using (validatedImage.fileStream)
+                {
+                    _logger.LogInformation("Uploading image: {FileName}, Size: {Size} bytes", 
+                        validatedImage.fileName, validatedImage.fileStream.Length);
 
-            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-            return uploadResult.SecureUrl.ToString();
+                    var uploadParams = new ImageUploadParams()
+                    {
+                        File = new FileDescription(validatedImage.fileName, validatedImage.fileStream),
+                        Folder = "zcommerce",
+                        UniqueFilename = true,
+                        Transformation = new Transformation().Quality("auto").FetchFormat("auto"),
+                        AllowedFormats = new string[] { "jpg", "jpeg", "png", "gif", "bmp", "webp" }
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                    
+                    if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK || uploadResult.StatusCode == System.Net.HttpStatusCode.Created) {
+                        return uploadResult.SecureUrl.ToString();
+                    } else {
+                        var errorMsg = uploadResult.Error?.Message ?? "Unknown error";
+                        throw new Exception($"Cloudinary upload failed with status {uploadResult.StatusCode}: {errorMsg}");
+                    }
+                }
+            } catch (Exception ex) {
+                throw new Exception("Image upload failed: " + ex.Message, ex);
+            }
         }
 
-        private validatedImage ValidateImage(IFormFile imagefile)
+        private async Task<validatedImage> ValidateImageAsync(IFormFile imagefile)
         {
             if(imagefile == null)
                 throw new ArgumentNullException(nameof(imagefile), "Image file cannot be null.");
@@ -59,13 +105,20 @@ namespace App.Services
             if(imagefile.Length > maxFileSize)
                 throw new ArgumentException("Image file size exceeds the maximum allowed size of 5MB.");
 
-            using var stream = imagefile.OpenReadStream();
+            // Copy to MemoryStream to avoid disposed stream issues
+            var memoryStream = new MemoryStream();
+            await imagefile.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
 
-            if(!ValidateImageStream(stream))
+            if(!ValidateImageStream(memoryStream))
+            {
+                memoryStream.Dispose();
                 throw new ArgumentException("Image file content is not valid.");
+            }
 
+            memoryStream.Position = 0;
             return new validatedImage { 
-                fileStream = stream, 
+                fileStream = memoryStream, 
                 fileName = imagefile.FileName 
             };
         }

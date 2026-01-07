@@ -13,7 +13,7 @@ namespace App.Models
 
         public static void Initialize(DatabaseService dbService)
         {
-            Collection = dbService.GetCollection<CategoryModel>("categories");
+            Collection = dbService.GetCollection<CategoryModel>("Categories");
         }
     }
 }

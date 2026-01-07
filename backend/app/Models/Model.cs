@@ -136,7 +136,6 @@ namespace App.Models
             return await Collection.FindOneAndUpdateAsync(filter, combinedUpdate, options);
         }
 
-
         public async Task<bool> Delete()
         {
             if (Collection is null)

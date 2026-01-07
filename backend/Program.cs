@@ -5,8 +5,10 @@ using App.Middleware;
 using RazorEngineCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+
 
 
 Env.Load();
@@ -23,6 +25,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<GoogleService>();
 builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<DetectionService>();
 builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<IRazorEngine, RazorEngine>();
 builder.Services.AddSingleton<IAuthorizationHandler, RoleHandler>();
@@ -106,12 +109,17 @@ if(app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseHttpsRedirection();
 
+app.UseAuthorization();
 app.UseAuthentication();
 app.UseMiddleware<UserContextMiddleware>();
-app.UseAuthorization();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.MapControllers();
 app.Run();

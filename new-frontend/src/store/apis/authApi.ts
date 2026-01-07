@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-import type { AuthResponse, LoginRequest, SignupRequest, PassForgotRequest, PassForgotResponse } from '../types/authTypes';
 import type { RootState } from '../index';
+import type { AuthResponse, LoginRequest, SignupRequest, 
+  PassForgotRequest, PassForgotResponse, ResetPassRequest, ResetPassResponse } from '../types/authTypes';
 
-export const authApi = createApi({
+const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({ 
     baseUrl: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth`,
@@ -20,7 +21,7 @@ export const authApi = createApi({
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (credentials) => ({
-        url: 'login',
+        url: 'sign-in',
         method: 'POST',
         body: credentials,
       }),
@@ -55,7 +56,7 @@ export const authApi = createApi({
     logout: builder.mutation<void, void>({
       query: () => ({
         url: 'logout',
-        method: 'POST',
+        method: 'PUT',
       }),
     }),
     forgotPassword: builder.mutation<PassForgotResponse, PassForgotRequest>({
@@ -65,7 +66,7 @@ export const authApi = createApi({
         body: data,
       }),
     }),
-    resetPassword: builder.mutation<void, { token: string; password: string; passwordConfirmation: string }>({
+    resetPassword: builder.mutation<ResetPassResponse, ResetPassRequest>({
       query: ({ token, password, passwordConfirmation }) => ({
         url: 'reset-password',
         method: 'PUT',
@@ -75,4 +76,5 @@ export const authApi = createApi({
   }),
 });
 
+export default authApi;
 export const { useLoginMutation, useSignupMutation, useGoogleloginMutation, useResendVerificationMutation, useVerifyEmailMutation, useLogoutMutation, useForgotPasswordMutation, useResetPasswordMutation } = authApi;

@@ -12,8 +12,24 @@ namespace App.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public ObjectId UserId { get; set; }
 
+        [BsonElement("sessionId")]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId SessionId { get; set; }
+
         [BsonElement("Token")]
         public string Token { get; set; } = string.Empty;
+
+        [BsonElement("deviceType")]
+        public string DeviceType { get; set; } = string.Empty;
+
+        [BsonElement("Location")]
+        public string Location { get; set; } = string.Empty;
+
+        [BsonElement("deviceOS")]
+        public string DeviceOS { get; set; } = string.Empty;
+
+        [BsonElement("lastUsedAt")]
+        public DateTime LastUsedAt { get; set; }
 
         [BsonElement("expiresAt")]
         public DateTime ExpiresAt { get; set; }
@@ -23,11 +39,11 @@ namespace App.Models
             Collection = dbService.GetCollection<RTokenModel>("Rtokens");
         }
 
-        public static async Task<RTokenModel?> FindForUser(ObjectId userId)
+        public static async Task<List<RTokenModel>> FindForUser(ObjectId userId)
         {
             if (Collection is null)
                 throw new InvalidOperationException($"Collection for {typeof(RTokenModel).Name} is not initialized.");
-            return await Collection.Find(x => x.UserId == userId).FirstOrDefaultAsync();
+            return await Collection.Find(x => x.UserId == userId).ToListAsync();
         }
 
         public static async Task<RTokenModel?> FindByToken(string token)

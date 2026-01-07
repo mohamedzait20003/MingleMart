@@ -4,8 +4,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { GoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-toastify';
 
-import { Visibility, VisibilityOff, PersonOutline, EmailOutlined, LockOutlined, ArrowForward } from '@mui/icons-material';
-import { Box, TextField, Button, Typography, Container, Paper, InputAdornment, IconButton, Checkbox, FormControlLabel, Alert, Divider, CircularProgress, Link, Fade, Stack } from '@mui/material';
+import { Visibility, VisibilityOff, PersonOutline, EmailOutlined, LockOutlined, ArrowForward, Cake, Wc } from '@mui/icons-material';
+import { Box, TextField, Button, Typography, Container, Paper, InputAdornment, IconButton, Checkbox, FormControlLabel, Alert, Divider, CircularProgress, Link, Fade, Stack, MenuItem } from '@mui/material';
 
 import { useSignupMutation, useGoogleloginMutation } from '../../../store/apis/authApi';
 
@@ -14,6 +14,8 @@ interface SignupFormData {
   lName: string;
   username: string;
   email: string;
+  gender: string;
+  dateOfBirth: string;
   password: string;
   passwordConfirmation: string;
   terms: boolean;
@@ -39,6 +41,8 @@ const SignUp: FC = () => {
       lName: '',
       username: '',
       email: '',
+      gender: '',
+      dateOfBirth: '',
       password: '',
       passwordConfirmation: '',
       terms: false,
@@ -54,6 +58,8 @@ const SignUp: FC = () => {
         lName: data.lName,
         username: data.username,
         email: data.email,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
         password: data.password,
         passwordConfirmation: data.passwordConfirmation,
       }).unwrap();
@@ -258,6 +264,84 @@ const SignUp: FC = () => {
                     />
                   )}
                 />
+
+                {/* Gender and Birth Date in the same row */}
+                <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+                  <Controller
+                    name="gender"
+                    control={control}
+                    rules={{
+                      required: 'Gender is required',
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        select
+                        label="Gender"
+                        fullWidth
+                        error={!!errors.gender}
+                        helperText={errors.gender?.message}
+                        variant="outlined"
+                        slotProps={{
+                          input: {
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Wc color="action" />
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                      >
+                        <MenuItem value="male">Male</MenuItem>
+                        <MenuItem value="female">Female</MenuItem>
+                        <MenuItem value="other">Other</MenuItem>
+                        <MenuItem value="prefer-not-to-say">Prefer not to say</MenuItem>
+                      </TextField>
+                    )}
+                  />
+                  <Controller
+                    name="dateOfBirth"
+                    control={control}
+                    rules={{
+                      required: 'Birth date is required',
+                      validate: (value) => {
+                        const date = new Date(value);
+                        const today = new Date();
+                        const age = today.getFullYear() - date.getFullYear();
+                        if (age < 13) return 'You must be at least 13 years old';
+                        if (age > 120) return 'Invalid birth date';
+                        return true;
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Birth Date"
+                        type="date"
+                        fullWidth
+                        error={!!errors.dateOfBirth}
+                        helperText={errors.dateOfBirth?.message}
+                        variant="outlined"
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                          input: {
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Cake color="action" />
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                        sx={{
+                          '& .MuiInputBase-input': {
+                            paddingLeft: '8px',
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                </Stack>
+
                 <Controller
                   name="password"
                   control={control}

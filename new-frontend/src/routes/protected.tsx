@@ -1,14 +1,23 @@
-import type { FC, ReactNode } from "react";
+import { useState, useEffect, type FC, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import type { RootState } from "../store";
 
 const Protected: FC<{ children: ReactNode, Roles?: string[] }> = ({ children, Roles }) => {
+    const [isClient, setIsClient] = useState(false);
     const { isAuthenticated, isVerified, role } = useSelector((state: RootState) => state.auth);
+    
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+        return <>{children}</>;
+    }
 
     if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/authenticate/login" replace />;
     }
 
     if (!isVerified) {

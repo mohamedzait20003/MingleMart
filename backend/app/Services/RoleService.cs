@@ -45,7 +45,7 @@ namespace App.Services
                 return;
             }
 
-            var role = await user.GetRole();
+            var role = user.Role;
 
             if (role != null && requirement.Roles.Contains(role.Name)){
                 context.Succeed(requirement);

@@ -28,7 +28,7 @@ namespace App.Models
 
         public static void Initialize(DatabaseService dbService)
         {
-            Collection = dbService.GetCollection<ProductModel>("products");
+            Collection = dbService.GetCollection<ProductModel>("Products");
         }
     }
 }

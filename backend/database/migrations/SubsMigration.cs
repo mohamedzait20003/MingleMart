@@ -26,13 +26,13 @@ namespace Database.Migrations
         private readonly IMongoCollection<SubsDocument> _collection;
 
         public int Order => 6;
-        public string Name => "newsLetters";
+        public string Name => "NewsLetters";
         public string Icon => "📧";
 
         public SubsMigration(IMongoDatabase database)
         {
             _database = database;
-            _collection = database.GetCollection<SubsDocument>("newsLetters");
+            _collection = database.GetCollection<SubsDocument>("NewsLetters");
         }
 
         public async Task MigrateAsync()

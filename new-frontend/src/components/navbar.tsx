@@ -16,9 +16,8 @@ const Navbar: FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [logout, { isLoading }] = useLogoutMutation();
-  const { isAuthenticated, role, user } = useSelector((state: RootState) => state.auth);
-
-  console.log('Auth State:', { isAuthenticated, role, user });
+  const { isAuthenticated, role } = useSelector((state: RootState) => state.auth);
+  const { username } = useSelector((state: RootState) => state.user);
 
   const handleLogout = async () => {
     try {
@@ -35,7 +34,7 @@ const Navbar: FC = () => {
     <nav className="sticky top-0 z-50 bg-white shadow-md">
       <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/home" className="flex items-center">
+          <Link to={isAuthenticated ? `/${role?.toLowerCase()}` : `/home`} className="flex items-center">
             <span className="text-2xl md:text-3xl font-extrabold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex">
               {[..."ZCommerce"].map((char, i) => (
                 <motion.span
@@ -125,16 +124,10 @@ const Navbar: FC = () => {
               </>
             )}
 
-            {isAuthenticated && role === 'admin' && (
+            {isAuthenticated && role === 'Admin' && (
               <>
-                <Link to="/admin/dashboard" className="text-gray-700 hover:text-blue-600 font-medium transition">
-                  Dashboard
-                </Link>
                 <Link to="/admin/products" className="text-gray-700 hover:text-blue-600 font-medium transition">
                   Products
-                </Link>
-                <Link to="/admin/orders" className="text-gray-700 hover:text-blue-600 font-medium transition">
-                  Orders
                 </Link>
                 <Link to="/admin/users" className="text-gray-700 hover:text-blue-600 font-medium transition">
                   Users
@@ -159,7 +152,7 @@ const Navbar: FC = () => {
                 )}
 
                 {/* Admin-specific icons */}
-                {role === 'admin' && (
+                {role === 'Admin' && (
                   <Link to="/admin/dashboard" className="hidden md:block text-gray-700 hover:text-blue-600 transition">
                     <Dashboard className="w-6 h-6" />
                   </Link>
@@ -170,14 +163,14 @@ const Navbar: FC = () => {
                   <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition">
                     <PersonOutline className="w-6 h-6" />
                     <span className="hidden md:block text-sm font-medium">
-                      {user?.username || 'Account'}
+                      {username || 'Account'}
                     </span>
                   </button>
                   
                   {/* Dropdown menu */}
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                     <Link
-                      to={role === 'admin' ? '/admin/profile' : '/profile'}
+                      to="/profile"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       My Profile
@@ -192,9 +185,6 @@ const Navbar: FC = () => {
                         </Link>
                       </>
                     )}
-                    <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Settings
-                    </Link>
                     <hr className="my-2" />
                     <button
                       onClick={handleLogout}
@@ -207,7 +197,6 @@ const Navbar: FC = () => {
                 </div>
               </>
             ) : (
-              /* Show for unauthenticated users */
               <>
                 <Link
                   to="/authenticate/login"
@@ -223,8 +212,6 @@ const Navbar: FC = () => {
                 </Link>
               </>
             )}
-
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden text-gray-700 hover:text-blue-600"
@@ -233,11 +220,7 @@ const Navbar: FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Mobile search bar removed for customer */}
       </div>
-
-      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-4 py-4 space-y-3">
@@ -346,28 +329,14 @@ const Navbar: FC = () => {
               </>
             )}
 
-            {isAuthenticated && role === 'admin' && (
+            {isAuthenticated && role === 'Admin' && (
               <>
-                <Link
-                  to="/admin/dashboard"
-                  className="block text-gray-700 hover:text-blue-600 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
                 <Link
                   to="/admin/products"
                   className="block text-gray-700 hover:text-blue-600 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Products
-                </Link>
-                <Link
-                  to="/admin/orders"
-                  className="block text-gray-700 hover:text-blue-600 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Orders
                 </Link>
                 <Link
                   to="/admin/users"
@@ -378,7 +347,7 @@ const Navbar: FC = () => {
                 </Link>
                 <hr className="my-2" />
                 <Link
-                  to="/admin/profile"
+                  to="/profile"
                   className="block text-gray-700 hover:text-blue-600 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >

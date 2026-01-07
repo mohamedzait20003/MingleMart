@@ -1,11 +1,20 @@
-interface User {
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
+import type { User } from './userTypes';
+
+// State Types for Authentication
+export type Role = string | null;
+export type Token = string | null;
+
+export interface AuthState {
+  role: Role;
+  token: Token;
+  isVerified: boolean;
+  isAuthenticated: boolean;
 }
 
-interface AuthResponse {
+
+// Auth API Types
+// Basic Authetication Types
+export interface AuthResponse {
   message: string;
   data: {
     token: string;
@@ -15,29 +24,37 @@ interface AuthResponse {
   };
 };
 
-interface PassForgotResponse {
-    message: string;
-};
-
-interface LoginRequest {
+export interface LoginRequest {
   email: string;
   password: string;
 };
 
-interface SignupRequest {
+export interface SignupRequest {
   fName: string;
   lName: string;
   username: string;
   email: string;
+  gender: string;
+  dateOfBirth: string;
   password: string;
   passwordConfirmation: string;
 };
 
-interface PassForgotRequest {
-    email: string;
+// Password Forget & Reset Types
+export interface PassForgotRequest {
+  email: string;
 };
 
+export interface PassForgotResponse {
+  message: string;
+};
 
+export interface ResetPassRequest {
+  token: string;
+  password: string;
+  passwordConfirmation: string;
+};
 
-
-export type { User, AuthResponse, LoginRequest, SignupRequest, PassForgotRequest, PassForgotResponse };
+export interface ResetPassResponse {
+  message: string;
+}

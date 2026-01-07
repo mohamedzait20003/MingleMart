@@ -32,8 +32,7 @@ namespace Database.Seeders
         public RoleSeeder(IMongoDatabase database)
         {
             _database = database;
-            _collection = database.GetCollection<RoleDocument>("roles");
-            CreateIndexes().Wait();
+            _collection = database.GetCollection<RoleDocument>("Roles");
         }
 
         public async Task SeedAsync()
@@ -72,24 +71,6 @@ namespace Database.Seeders
 
             await _collection.InsertManyAsync(Roles);
             Console.WriteLine($"✓ Seeded {Roles.Count} roles successfully.");
-        }
-
-        private async Task CreateIndexes()
-        {
-            try
-            {
-                var nameIndexKeysDefinition = Builders<RoleDocument>.IndexKeys.Ascending(x => x.Name);
-                var nameIndexOptions = new CreateIndexOptions
-                {
-                    Unique = true,
-                    Name = "NameIndex"
-                };
-
-                var nameIndexModel = new CreateIndexModel<RoleDocument>(nameIndexKeysDefinition, nameIndexOptions);
-                await _collection.Indexes.CreateOneAsync(nameIndexModel);
-            } catch (Exception) {
-                Console.WriteLine("Index already exists for RoleDocument.");
-            }
         }
     }
 }

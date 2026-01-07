@@ -8,7 +8,6 @@ namespace App.DTOs
         [StringLength(100, ErrorMessage = "First name must be between 2 and 100 characters", MinimumLength = 2)]
         public required string FName { get; set; }
 
-
         [Required(ErrorMessage = "Last name is required")]
         [StringLength(100, ErrorMessage = "Last name must be between 2 and 100 characters", MinimumLength = 2)]
         public required string LName { get; set; }
@@ -20,6 +19,13 @@ namespace App.DTOs
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
         public required string Email { get; set; }
+
+        [Required(ErrorMessage = "Gender is required")]
+        [StringLength(30, ErrorMessage = "Gender must be less than 30 characters")]
+        public required string Gender { get; set; }
+
+        [Required(ErrorMessage = "Date of birth is required")]
+        public required string DateOfBirth { get; set; }
 
         [Required(ErrorMessage = "Password is required")]
         [StringLength(100, ErrorMessage = "Password must be at least 6 characters", MinimumLength = 6)]
@@ -79,5 +85,7 @@ namespace App.DTOs
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public required string Username { get; set; }
+        public string? Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; }
     }
 }

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { type RouteObject } from 'react-router-dom';
 
 // Route Guards
+import Block from './block';
 import Redirect from './redirect';
 import Protected from './protected';
 
@@ -26,7 +27,6 @@ import Terms from '../modules/company/pages/terms';
 import Privacy from '../modules/company/pages/privacy';
 import Careers from '../modules/company/pages/careers';
 
-
 // CSR Modules and Pages
 const Admin = lazy(() => import('../modules/admin/main'));
 const Profile = lazy(() => import('../modules/profile/main'));
@@ -34,9 +34,17 @@ const Authenticate = lazy(() => import('../modules/auth/main'));
 const Customer = lazy(() => import('../modules/customer/main'));
 
 // Admin Pages
+const AHome = lazy(() => import('../modules/admin/pages/home'));
 const Users = lazy(() => import('../modules/admin/pages/users'));
 const Products = lazy(() => import('../modules/admin/pages/products'));
 const Dashboard = lazy(() => import('../modules/admin/pages/dashboard'));
+
+// Profile Pages
+const Information = lazy(() => import('../modules/profile/pages/information'));
+const Security = lazy(() => import('../modules/profile/pages/security'));
+const PPrivacy = lazy(() => import('../modules/profile/pages/privacy'));
+const Shipping = lazy(() => import('../modules/profile/pages/shipping'));
+const Billing = lazy(() => import('../modules/profile/pages/billing'));
 
 // Auth Pages
 const Login = lazy(() => import('../modules/auth/pages/login'));
@@ -63,7 +71,11 @@ export const routes: RouteObject[] = [{
         }, 
         {
             path: 'home',
-            element: <Landing />,
+            element: (
+                <Block>
+                    <Landing />
+                </Block>
+            ),
             children: [
                 {
                     index: true,
@@ -179,6 +191,46 @@ export const routes: RouteObject[] = [{
                 </Suspense>
             ),
             children: [
+                {
+                    index: true,
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Information />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'security',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Security />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'privacy',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <PPrivacy />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'shipping',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Shipping />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'billing',
+                    element: (
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Billing />
+                        </Suspense>
+                    )
+                },
             ],
         },
         {
@@ -247,6 +299,14 @@ export const routes: RouteObject[] = [{
                 {
                     index: true,
                     element: (
+                        <Suspense fallback={<LoadingFallback />}>   
+                            <AHome />
+                        </Suspense>
+                    )
+                },
+                {
+                    path: 'dashboard',
+                    element: (
                         <Suspense fallback={<LoadingFallback />}>
                             <Dashboard />
                         </Suspense>
@@ -267,8 +327,7 @@ export const routes: RouteObject[] = [{
                             <Products />
                         </Suspense>
                     )
-                }
-
+                },
             ],
         }
     ],

@@ -1,9 +1,8 @@
-import { type FC } from 'react'
+import { type FC } from 'react';
+import { Outlet } from 'react-router-dom';
 
-const Admin: FC = () => {
-  return (
-    <div>Admin</div>
-  )
-}
+const Admin: FC = () => (
+  <Outlet />
+);
 
-export default Admin
+export default Admin;

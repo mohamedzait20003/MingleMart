@@ -32,7 +32,7 @@ namespace Database.Migrations
         public CategoryMigration(IMongoDatabase database)
         {
             _database = database;
-            _collection = database.GetCollection<CategoryDocument>("categories");
+            _collection = database.GetCollection<CategoryDocument>("Categories");
         }
 
         public async Task MigrateAsync()

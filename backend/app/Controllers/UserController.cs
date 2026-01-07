@@ -42,23 +42,33 @@ namespace App.Controllers
             }
         }
 
-        [HttpPut("update-profile-pic")]
+        [HttpPut("update-picture")]
         [Authorize]
         public async Task<IActionResult> UpdateProfilePic([FromForm] UProfilePicDto request)
         {
-            if(!ModelState.IsValid)
-                return BadRequest(ModelState);
+            try
+            {
+                if(!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            var user = HttpContext.Items["User"] as UserModel;
-            if(user == null)
-                return Unauthorized(new { message = "User not authenticated" });
+                var user = HttpContext.Items["User"] as UserModel;
+                if(user == null)
+                    return Unauthorized(new { message = "User not authenticated" });
 
-            
-            var updatedUser = await user.UpdateProfilePic(request.ImageFile, _cloudinaryService);
-            return Ok(new { 
-                message = "Profile picture updated successfully",
-                data = updatedUser.ProfilePicURL
-            });
+                
+                var updatedUser = await user.UpdateProfilePic(request.ImageFile, _cloudinaryService);
+                return Ok(new { 
+                    message = "Profile picture updated successfully",
+                    data = updatedUser.ProfilePicURL
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { 
+                    message = "Failed to update profile picture", 
+                    error = ex.Message 
+                });
+            }
         }
     }
 }

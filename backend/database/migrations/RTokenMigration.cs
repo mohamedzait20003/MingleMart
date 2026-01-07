@@ -17,6 +17,18 @@ namespace Database.Migrations
         [BsonElement("Token")]
         public string Token { get; set; } = string.Empty;
 
+        [BsonElement("deviceType")]
+        public string DeviceType { get; set; } = string.Empty;
+
+        [BsonElement("Location")]
+        public string Location { get; set; } = string.Empty;
+
+        [BsonElement("deviceOS")]
+        public string DeviceOS { get; set; } = string.Empty;
+
+        [BsonElement("lastUsedAt")]
+        public DateTime LastUsedAt { get; set; }
+
         [BsonElement("expiresAt")]
         public DateTime ExpiresAt { get; set; }
 

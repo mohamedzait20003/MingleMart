@@ -12,7 +12,7 @@ namespace App.Models
 
         public static void Initialize(DatabaseService dbService)
         {
-            Collection = dbService.GetCollection<RoleModel>("roles");
+            Collection = dbService.GetCollection<RoleModel>("Roles");
         }
 
         public static async Task<List<UserModel>> UsersWithRole(ObjectId roleId)
@@ -20,7 +20,7 @@ namespace App.Models
             if (Collection is null)
                 throw new InvalidOperationException($"Collection for {typeof(RoleModel).Name} is not initialized.");
 
-            var userCollection = Collection.Database.GetCollection<UserModel>("users");
+            var userCollection = Collection.Database.GetCollection<UserModel>("Users");
             return await userCollection.Find(x => x.RoleID == roleId).ToListAsync();
         }
     }

@@ -37,13 +37,20 @@ const Login: FC = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login({
+      const response = await login({
         email: data.email,
         password: data.password,
       }).unwrap();
 
       toast.success('Login successful!');
-      navigate('/customer');
+
+      if (response.data.role === 'customer') {
+        navigate('/customer');
+      } else if (response.data.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       console.error('Login failed:', err);
       toast.error('Login failed. Please check your credentials.');

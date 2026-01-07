@@ -32,7 +32,7 @@ namespace Database.Migrations
         public RoleMigration(IMongoDatabase database)
         {
             _database = database;
-            _collection = _database.GetCollection<RoleDocument>("roles");
+            _collection = _database.GetCollection<RoleDocument>("Roles");
         }
 
         public async Task MigrateAsync()

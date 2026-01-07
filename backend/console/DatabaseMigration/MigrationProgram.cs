@@ -16,9 +16,10 @@ namespace Commands
 
             var host = CreateHostBuilder(args).Build();
 
-            if(args.Length == 0 || args[0].ToLower() != "migrate")
+            if(args.Length == 0 || !args[0].ToLower().StartsWith("migrate"))
             {
-                Console.WriteLine("❌ No valid command provided. Use 'migrate' to run migrations.");
+                Console.WriteLine("❌ No valid command provided. Use 'migrate:all' or 'migrate:fresh' to run migrations.");
+                ShowUsage(host.Services);
                 return;
             }
 
@@ -160,6 +161,24 @@ namespace Commands
                 Console.WriteLine($"❌ Error discovering migration types: {ex.Message}");
                 return new List<Type>();
             }
+        }
+
+        private static List<IMigration> GetRegisteredMigrations(IServiceProvider services)
+        {
+            var migrationTypes = GetAllMigrationTypes();
+            var migrations = new List<IMigration>();
+
+            foreach (var migrationType in migrationTypes)
+            {
+                try {
+                    var migration = (IMigration)services.GetRequiredService(migrationType);
+                    migrations.Add(migration);
+                } catch {
+                    continue;
+                }
+            }
+
+            return migrations.OrderBy(m => m.Order).ToList();
         }
 
         private static async Task MigrateAll(IServiceProvider services)

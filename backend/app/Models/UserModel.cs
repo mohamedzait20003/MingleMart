@@ -3,9 +3,21 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
+using CloudinaryDotNet.Actions;
 
 namespace App.Models
 {
+    public class Session
+    {
+        public string DeviceType { get; set; } = string.Empty;
+
+        public string IpAddress { get; set; } = string.Empty;
+
+        public string DeviceOS { get; set; } = string.Empty;
+        public DateTime LastUsedAt { get; set; }
+    }
+
+
     public class UserModel : Model<UserModel>
     {
         [BsonElement("FirstName")]
@@ -33,12 +45,83 @@ namespace App.Models
         [BsonElement("2FaEnabled")]
         public bool FaEnabled { get; set; } = false;
 
+        [BsonElement("Gender")]
+        public string Gender { get; set; } = string.Empty;
+
+        [BsonElement("DateOfBirth")]
+        public DateTime DateOfBirth { get; set; }
+
+        [BsonElement("Language")]
+        public string Language { get; set; } = string.Empty;
+
+        [BsonElement("TimeZone")]
+        public string TimeZone { get; set; } = string.Empty;
+
+        [BsonElement("IsActivityTracked")]
+        public bool IsActivityTracked { get; set; } = true;
+
+        [BsonElement("IsDataShared")]
+        public bool IsDataShared { get; set; } = false;
+
+        [BsonElement("IsEmailNotified")]
+        public bool IsEmailNotified { get; set; } = true;
+
+        [BsonElement("IsSecurityNotified")]
+        public bool IsSecurityNotified { get; set; } = true;
+
+        [BsonElement("IsUpdateNotified")]
+        public bool IsUpdateNotified { get; set; } = true;
+
         [BsonElement("RoleID")]
         public ObjectId RoleID { get; set; }
 
+        [BsonIgnore]
+        [JsonIgnore]
+        private RoleModel? _role;
+
+
+        [BsonIgnore]
+        [JsonIgnore]
+        private List<Session>? _sessions;
+
+
+        [BsonIgnore]
+        public RoleModel? Role
+        {
+            get
+            {
+                if (_role == null && RoleID != ObjectId.Empty)
+                {
+                    _role = RoleModel.FindById(RoleID).GetAwaiter().GetResult();
+                }
+
+                return _role;
+            }
+        }
+
+        [BsonIgnore]
+        public List<Session> Sessions
+        {
+            get
+            {
+                if (_sessions == null)
+                {
+                    _sessions = RTokenModel.FindForUser(this.Id).GetAwaiter().GetResult().Select(rt => new Session
+                    {
+                        DeviceType = rt.DeviceType,
+                        IpAddress = rt.IpAddress,
+                        DeviceOS = rt.DeviceOS,
+                        LastUsedAt = rt.LastUsedAt
+                    }).ToList();
+                }
+
+                return _sessions;
+            }
+        }
+
         public static void Initialize(DatabaseService dbService)
         {
-            Collection = dbService.GetCollection<UserModel>("users");
+            Collection = dbService.GetCollection<UserModel>("Users");
         }
 
         public static async Task<UserModel?> FindByEmail(string email)
@@ -75,19 +158,6 @@ namespace App.Models
             );
         }
 
-        public async Task<RTokenModel> GenerateRefreshToken()
-        {
-            return await RTokenModel.UpdateOrCreate(
-                filter: x => x.UserId == this.Id,
-                updates: new Dictionary<string, object>
-                {
-                    { "UserId", this.Id },
-                    { "Token", Guid.NewGuid().ToString() },
-                    { "ExpiresAt", DateTime.UtcNow.AddHours(24) }
-                }
-            );
-        }
-
         public async Task<PTokenModel> GeneratePasswordToken()
         {
             return await PTokenModel.UpdateOrCreate(
@@ -101,17 +171,24 @@ namespace App.Models
             );
         }
 
-        public async Task<bool> InvokeRefreshToken()
+        public async Task<RTokenModel> GenerateRefreshToken(DeviceInfo deviceInfo)
         {
-            var existingToken = await RTokenModel.FindForUser(this.Id);
+            if (Collection is null)
+                throw new InvalidOperationException($"Collection for {typeof(RTokenModel).Name} is not initialized.");
 
-            if (existingToken != null)
+            var newToken = new RTokenModel
             {
-                await existingToken.Delete();
-                return true;
-            }
-            
-            return false;
+                UserId = this.Id,
+                Token = Guid.NewGuid().ToString(),
+                DeviceType = deviceInfo.DeviceType,
+                DeviceOS = deviceInfo.OperatingSystem,
+                IpAddress = deviceInfo.IpAddress,
+                LastUsedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            };
+
+            await newToken.Save();
+            return newToken;
         }
 
         public async Task<UserModel> UpdatePassword(string oldPassword, string newPassword)
@@ -155,6 +232,9 @@ namespace App.Models
                 RoleID = defaultRoleId ?? ObjectId.Empty;
             }
 
+            Language = string.IsNullOrEmpty(Language) ? "en" : Language;
+            TimeZone = string.IsNullOrEmpty(TimeZone) ? "UTC" : TimeZone;
+
             try {
                 return await base.Save();
             } catch (MongoWriteException mwx) when (mwx.WriteError.Category == ServerErrorCategory.DuplicateKey) {
@@ -165,11 +245,6 @@ namespace App.Models
                 else
                     throw;
             }
-        }
-
-        public async Task<RoleModel?> GetRole()
-        {
-            return await RoleModel.FindById(RoleID);
         }
 
         private static bool IsHashed(string password)

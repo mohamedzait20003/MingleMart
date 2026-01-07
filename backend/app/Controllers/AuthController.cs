@@ -5,6 +5,7 @@ using App.Services;
 using RazorEngineCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using CloudinaryDotNet.Actions;
 
 namespace App.Controllers
 {
@@ -16,8 +17,9 @@ namespace App.Controllers
         private readonly IRazorEngine _razorEngine;
         private readonly IEmailService _emailService;
         private readonly GoogleService _googleService;
-        private readonly IWebHostEnvironment _environment;
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _environment;
+        private readonly DetectionService _detectionService;
         
         public AuthController(
             JwtService jwtService, 
@@ -25,7 +27,8 @@ namespace App.Controllers
             IEmailService emailService, 
             GoogleService googleService,
             IConfiguration configuration,
-            IWebHostEnvironment environment
+            IWebHostEnvironment environment,
+            DetectionService detectionService
         )
         {
             _jwtService = jwtService;
@@ -34,6 +37,7 @@ namespace App.Controllers
             _googleService = googleService;
             _environment = environment;
             _configuration = configuration;
+            _detectionService = detectionService;
         }
 
         [HttpPost("sign-up")]
@@ -46,6 +50,10 @@ namespace App.Controllers
             if (existingUser != null)
                 return Conflict(new { message = "Email already registered" });
 
+
+            if (!DateTime.TryParse(request.DateOfBirth, out DateTime parsedDob))
+                return BadRequest(new { message = "Invalid date of birth format" });
+
             var user = new UserModel
             {
                 FirstName = request.FName,
@@ -53,15 +61,19 @@ namespace App.Controllers
                 Email = request.Email,
                 Password = request.Password,
                 Username = request.Username,
+                Gender = request.Gender,
+                DateOfBirth = parsedDob,
                 IsVerified = false
             };
 
             await user.Save();
 
+            var roleName = user.Role?.Name;
             var verifyToken = await user.GenerateVerifyToken();
+            var deviceInfo = _detectionService.GetDeviceInfo(HttpContext);
 
             var accessToken = _jwtService.GenerateToken(user);
-            var refreshToken = await user.GenerateRefreshToken();
+            var refreshToken = await user.GenerateRefreshToken(deviceInfo);
 
             var frontendUrl = _configuration["Frontend:URL"] ?? "http://localhost:3000";
             var verificationUrl = $"{frontendUrl}/authenticate/email-verify?token={verifyToken.Token}";
@@ -89,13 +101,26 @@ namespace App.Controllers
                 message = "User registered successfully. Please check your email to verify your account.",
                 data = new {
                     token = accessToken,
-                    role = (await user.GetRole())?.Name,
+                    role = roleName,
                     isVerified = user.IsVerified,
                     user = new {
                         user.FirstName,
                         user.LastName,
                         user.Username,
-                        user.Email
+                        user.Email,
+                        user.ProfilePicURL,
+                        user.IsVerified,
+                        user.FaEnabled,
+                        user.Gender,
+                        user.DateOfBirth,
+                        user.Language,
+                        user.TimeZone,
+                        user.IsActivityTracked,
+                        user.IsDataShared,
+                        user.IsEmailNotified,
+                        user.IsSecurityNotified,
+                        user.IsUpdateNotified,
+                        user.Sessions
                     }
                 }
             });
@@ -111,8 +136,10 @@ namespace App.Controllers
             if (user == null)
                 return Unauthorized(new { message = "Invalid email or password" });
 
+            var roleName = user.Role?.Name;
             var accessToken = _jwtService.GenerateToken(user);
-            var refreshToken = await user.GenerateRefreshToken();
+            var deviceInfo = _detectionService.GetDeviceInfo(HttpContext);
+            var refreshToken = await user.GenerateRefreshToken(deviceInfo);
 
             Response.Cookies.Append("refreshToken", refreshToken.Token, new CookieOptions
             {
@@ -126,13 +153,26 @@ namespace App.Controllers
                 message = "Singed in successfully",
                 data = new {
                     token = accessToken,
-                    role = (await user.GetRole())?.Name,
+                    role = roleName,
                     isVerified = user.IsVerified,
                     user = new {
                         user.FirstName,
                         user.LastName,
                         user.Username,
-                        user.Email
+                        user.Email,
+                        user.ProfilePicURL,
+                        user.IsVerified,
+                        user.FaEnabled,
+                        user.Gender,
+                        user.DateOfBirth,
+                        user.Language,
+                        user.TimeZone,
+                        user.IsActivityTracked,
+                        user.IsDataShared,
+                        user.IsEmailNotified,
+                        user.IsSecurityNotified,
+                        user.IsUpdateNotified,
+                        user.Sessions
                     }
                 }
             });
@@ -159,14 +199,20 @@ namespace App.Controllers
                     LastName = gUserInfo.LastName,
                     Email = gUserInfo.Email,
                     Username = gUserInfo.Username,
-                    IsVerified = true
+                    IsVerified = true,
+                    Gender = string.Empty,
+                    DateOfBirth = DateTime.UtcNow
                 };
 
                 await user.Save();
             }
 
+            var deviceInfo = _detectionService.GetDeviceInfo(HttpContext);
+
+            var roleName = user.Role?.Name;
             var accessToken = _jwtService.GenerateToken(user);
-            var refreshToken = await user.GenerateRefreshToken();
+            var refreshToken = await user.GenerateRefreshToken(deviceInfo);
+            
 
             Response.Cookies.Append("refreshToken", refreshToken.Token, new CookieOptions
             {
@@ -177,16 +223,29 @@ namespace App.Controllers
             });
 
             return Ok(new {
-                message = "Singed in successfully",
+                message = "Signed in successfully",
                 data = new {
                     token = accessToken,
-                    role = (await user.GetRole())?.Name,
+                    role = roleName,
                     isVerified = user.IsVerified,
                     user = new {
                         user.FirstName,
                         user.LastName,
                         user.Username,
-                        user.Email
+                        user.Email,
+                        user.ProfilePicURL,
+                        user.IsVerified,
+                        user.FaEnabled,
+                        user.Gender,
+                        user.DateOfBirth,
+                        user.Language,
+                        user.TimeZone,
+                        user.IsActivityTracked,
+                        user.IsDataShared,
+                        user.IsEmailNotified,
+                        user.IsSecurityNotified,
+                        user.IsUpdateNotified,
+                        user.Sessions
                     }
                 }
             });
@@ -220,6 +279,28 @@ namespace App.Controllers
             await _emailService.SendAsync(mailer);
 
             return Ok(new { message = "Verification email resent successfully" });
+        }
+
+        [HttpPut("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var token = await VTokenModel.FindByToken(request.Token);
+            if (token == null || token.ExpiresAt < DateTime.UtcNow)
+                return BadRequest(new { message = "Invalid or expired verification token" });
+
+            var user = await UserModel.FindById(token.UserId);
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            user.IsVerified = true;
+            await user.Save();
+
+            await token.Delete();
+
+            return Ok(new { message = "Email verified successfully" });
         }
 
         [HttpPut("password-forgot")]
@@ -269,26 +350,33 @@ namespace App.Controllers
             return Ok(new { message = "Password reset successfully" });
         }
 
-        [HttpPut("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
+        [HttpPut("refresh-token")]
+        [Authorize]
+        public async Task<IActionResult> RefreshToken()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var token = await VTokenModel.FindByToken(request.Token);
-            if (token == null || token.ExpiresAt < DateTime.UtcNow)
-                return BadRequest(new { message = "Invalid or expired verification token" });
-
-            var user = await UserModel.FindById(token.UserId);
+            var user = HttpContext.Items["User"] as UserModel;
             if (user == null)
-                return NotFound(new { message = "User not found" });
+                return Unauthorized(new { message = "User not authenticated" });
 
-            user.IsVerified = true;
-            await user.Save();
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+                return BadRequest(new { message = "Refresh token not found in cookies" });
 
-            await token.Delete();
+            var tokenRecord = await RTokenModel.FindByToken(refreshToken);
+            if(tokenRecord == null || tokenRecord.ExpiresAt < DateTime.UtcNow){
+                return Unauthorized(new { message = "Invalid or expired refresh token" });
+            }
 
-            return Ok(new { message = "Email verified successfully" });
+            var roleName = user.Role?.Name;
+            var newaccessToken = _jwtService.GenerateToken(user);
+
+            tokenRecord.LastUsedAt = DateTime.UtcNow;
+            await tokenRecord.Save();
+
+            return Ok(new {
+                message = "Token refreshed successfully",
+                data = newaccessToken
+            });
         }
 
         [HttpPut("logout")]
@@ -296,15 +384,20 @@ namespace App.Controllers
         public async Task<IActionResult> Logout()
         {
             await _jwtService.BlackListToken(User);
-
+            
             var user = HttpContext.Items["User"] as UserModel;
-           
             if (user == null)
                 return Unauthorized(new { message = "User not authenticated" });
 
-            await user.InvokeRefreshToken();
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+                return BadRequest(new { message = "Refresh token not found in cookies" });
 
-            
+            var tokenRecord = await RTokenModel.FindByToken(refreshToken);
+            if(tokenRecord != null){
+                await tokenRecord.Delete();
+            }
+
             Response.Cookies.Delete("refreshToken", new CookieOptions
             {
                 HttpOnly = true,
