@@ -6,73 +6,32 @@ Thumbs.db
 *.log
 
 # ===========================
-# Backend (.NET / ASP.NET Core + Console projects)
+# Backend (Spring Boot / Maven)
 # ===========================
-# Build artifacts (main project + console apps)
-backend/bin/
-backend/obj/
-backend/console/**/bin/
-backend/console/**/obj/
-backend/**/publish/
-backend/**/[Bb]in/
-backend/**/[Oo]bj/
-backend/**/[Pp]ublish/
+# Build artifacts
+backend/target/
+backend/**/target/
+backend/**/dependency-reduced-pom.xml
 
-# NuGet restore files
-backend/**/*.nuget.dgspec.json
-backend/**/*.nuget.g.props
-backend/**/*.nuget.g.targets
-backend/**/project.assets.json
-backend/**/project.fragment.lock.json
-backend/**/project.lock.json
-
-# Visual Studio / Rider
-backend/.vs/
+# IDE / editor
 backend/.vscode/
 backend/.idea/
-backend/**/*.user
-backend/**/*.suo
-backend/**/*.userosscache
-backend/**/*.sln.docstates
-backend/**/*.pidb
-backend/**/*.userprefs
-backend/**/.idea/
-
-# User-specific files
-*.rsuser
-backend/**/*.sln.iml
-
-# Runtime files
-backend/**/*.dll
-backend/**/*.exe
-backend/**/*.pdb
-backend/**/*.deps.json
-backend/**/*.runtimeconfig.json
-backend/**/*.staticwebassets.runtime.json
-backend/**/*.staticwebassets.endpoints.json
+backend/*.iml
+backend/.classpath
+backend/.project
+backend/.settings/
 
 # Environment and secrets
 backend/.env
 backend/.env.*
-backend/**/*.secrets.json
-
-# Production-specific configs (keep Development for team consistency)
-backend/**/appsettings.Production.json
-backend/**/appsettings.Staging.json
 
 # Database files
-backend/**/database/migrations/*.sql
 backend/**/*.db
 backend/**/*.db-shm
 backend/**/*.db-wal
 
-# NuGet packages
-backend/**/packages/
-*.nupkg
-*.snupkg
-
 # ===========================
-# Frontend (React / CRA)
+# Frontend (Vite + TypeScript)
 # ===========================
 # Dependencies
 frontend/node_modules/
@@ -80,6 +39,7 @@ frontend/.pnp/
 frontend/.pnp.js
 
 # Build output
+frontend/dist/
 frontend/build/
 frontend/out/
 
@@ -99,6 +59,12 @@ frontend/yarn-error.log*
 frontend/pnpm-debug.log*
 frontend/lerna-debug.log*
 
+# Vite specific
+frontend/.vite/
+frontend/.turbo/
+frontend/.parcel-cache/
+frontend/.next/
+
 # Editor
 frontend/.vscode/
 frontend/.idea/
@@ -110,51 +76,5 @@ frontend/*~
 frontend/.DS_Store
 frontend/Thumbs.db
 
-# ===========================
-# New Frontend (Vite + TypeScript)
-# ===========================
-# Dependencies
-new-frontend/node_modules/
-new-frontend/.pnp/
-new-frontend/.pnp.js
-
-# Build output
-new-frontend/dist/
-new-frontend/build/
-new-frontend/out/
-
-# Environment files
-new-frontend/.env
-new-frontend/.env.*
-!new-frontend/.env.example
-
-# Testing
-new-frontend/coverage/
-new-frontend/.nyc_output/
-
-# Logs
-new-frontend/npm-debug.log*
-new-frontend/yarn-debug.log*
-new-frontend/yarn-error.log*
-new-frontend/pnpm-debug.log*
-new-frontend/lerna-debug.log*
-
-# Vite specific
-new-frontend/.vite/
-new-frontend/.turbo/
-new-frontend/.parcel-cache/
-new-frontend/.next/
-
-# Editor
-new-frontend/.vscode/
-new-frontend/.idea/
-new-frontend/*.swp
-new-frontend/*.swo
-new-frontend/*~
-
-# Misc
-new-frontend/.DS_Store
-new-frontend/Thumbs.db
-
 # TypeScript
-new-frontend/*.tsbuildinfo
+frontend/*.tsbuildinfo
