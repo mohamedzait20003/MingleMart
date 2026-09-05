@@ -19,5 +19,37 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Match tsconfig's noUnusedLocals/noUnusedParameters, which treat a
+      // leading underscore as "intentionally unused".
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
+    },
+  },
+  {
+    // Route modules pair lazy() component consts with a route-object export;
+    // they are never hot-reload boundaries themselves.
+    files: ['**/routes.tsx', 'src/routes/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    // shadcn/ui primitives export their `cva` variants next to the component by
+    // design; that pairing is the whole convention, so the fast-refresh rule
+    // does not apply here.
+    files: ['src/common/components/ui/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['src/server/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
   },
 ])

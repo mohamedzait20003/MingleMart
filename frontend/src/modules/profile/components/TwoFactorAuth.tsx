@@ -1,8 +1,7 @@
 import { type FC, useState } from 'react';
 import { useSelector } from 'react-redux';
 
-import { Shield } from '@mui/icons-material';
-import { Button, Switch, FormControlLabel, TextField, Alert } from '@mui/material';
+import { MdShield } from 'react-icons/md';
 
 import type { RootState } from '../../../store';
 
@@ -42,22 +41,28 @@ const TwoFactorAuth: FC = () => {
                         Add an extra layer of security to your account
                     </p>
                 </div>
-                <FormControlLabel
-                    control={
-                        <Switch
-                            checked={is2FAEnabled}
-                            onChange={handleToggle2FA}
-                            color="primary"
-                        />
-                    }
-                    label={is2FAEnabled ? 'Enabled' : 'Disabled'}
-                />
+                <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                        type="checkbox"
+                        checked={is2FAEnabled}
+                        onChange={handleToggle2FA}
+                        className="peer sr-only"
+                    />
+                    <span aria-hidden="true" className="relative h-6 w-11 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-blue-600 peer-checked:after:translate-x-5 peer-disabled:opacity-50" />
+                    <span className="text-sm font-medium text-gray-700">
+                        {is2FAEnabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                </label>
             </div>
 
             {is2FAEnabled && (
-                <Alert severity="success" icon={<Shield />} className="mt-4">
+                <div
+                    role="status"
+                    className="mt-4 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800"
+                >
+                    <MdShield className="shrink-0" />
                     Two-factor authentication is active on your account
-                </Alert>
+                </div>
             )}
 
             {showSetup && !is2FAEnabled && (
@@ -77,32 +82,36 @@ const TwoFactorAuth: FC = () => {
                         </div>
                     </div>
 
-                    <TextField
-                        label="Verification Code"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        placeholder="000000"
-                        inputProps={{ maxLength: 6 }}
-                        fullWidth
-                    />
+                    <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-gray-700">Verification Code</span>
+                        <input
+                            value={verificationCode}
+                            onChange={(e) => setVerificationCode(e.target.value)}
+                            placeholder="000000"
+                            maxLength={6}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-gray-50 disabled:text-gray-500"
+                        />
+                    </label>
 
                     <div className="flex gap-2">
-                        <Button
-                            variant="contained"
+                        <button
+                            type="button"
                             onClick={handleVerifyCode}
                             disabled={verificationCode.length !== 6}
+                            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Verify & Enable
-                        </Button>
-                        <Button
-                            variant="outlined"
+                            Verify &amp; Enable
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => {
                                 setShowSetup(false);
                                 setVerificationCode('');
                             }}
+                            className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Cancel
-                        </Button>
+                        </button>
                     </div>
                 </div>
             )}

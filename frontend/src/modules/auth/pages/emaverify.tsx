@@ -1,248 +1,115 @@
-import { type FC, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { type FC } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { CheckCircle, ErrorOutline, HourglassEmpty } from '@mui/icons-material';
-import { Box, Button, Typography, Container, Paper, Fade, CircularProgress, Alert } from '@mui/material';
+import { navUrls } from '@/lib/utils/navUrls';
+import { Card, CardContent } from '@/common/components/ui/card';
+import { Spinner } from '@/common/components/ui/spinner';
+import { Reveal } from '@/common/components/animation/reveal';
+import { Swap } from '@/common/components/animation/swap';
+import { useEmailVerification } from '@/lib/hooks/useUser';
+import { apiErrorMessage } from '@/lib/utils/apiError';
+import { currentLanding } from '@/lib/auth/session';
 
-import { useVerifyEmailMutation } from '../../../store/apis/authApi';
+import { AuthOutcome } from '../components/auth-outcome';
+import { AuthPrimaryLink, AuthSecondaryLink } from '../components/auth-links';
+import { AuthShell } from '../components/auth-shell';
 
 const EmaVerify: FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
-  const token = searchParams.get('token');
-  const [verifyEmail, { isLoading, isSuccess, error }] = useVerifyEmailMutation();
+    const token = searchParams.get('token');
+    // The hook owns the request, the toasts, and the delayed forward to the
+    // reader's landing. What is left here is which of three faces to show.
+    const { isLoading, isSuccess, error } = useEmailVerification(token);
 
-  useEffect(() => {
-    if (!token) {
-      return;
-    }
-
-    const verifyAccount = async () => {
-      try {
-        await verifyEmail({ token }).unwrap();
-        toast.success('Email verified successfully! Redirecting to your dashboard...');
-        
-        setTimeout(() => {
-          navigate('/customer');
-        }, 5000);
-      } catch (err: any) {
-        console.error('Verification failed:', err);
-        toast.error('Email verification failed.');
-      }
-    };
-
-    verifyAccount();
-  }, [token, verifyEmail, navigate]);
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <>
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
-                mb: 2,
-              }}
-            >
-              <HourglassEmpty sx={{ fontSize: 48, color: 'white' }} />
-            </Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-              Verifying Your Email
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Please wait while we verify your account...
-            </Typography>
-          </Box>
-          <Paper
-            elevation={6}
-            sx={{
-              p: { xs: 3, md: 4 },
-              borderRadius: 3,
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              textAlign: 'center',
-            }}
-          >
-            <CircularProgress size={60} thickness={4} sx={{ mb: 3 }} />
-            <Typography variant="body1" color="text.secondary">
-              Verifying your email address...
-            </Typography>
-          </Paper>
-        </>
-      );
-    }
-
-    if (isSuccess) {
-      return (
-        <>
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
-                mb: 2,
-              }}
-            >
-              <CheckCircle sx={{ fontSize: 48, color: 'white' }} />
-            </Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-              Email Verified!
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Your account has been successfully verified
-            </Typography>
-          </Box>
-          <Paper
-            elevation={6}
-            sx={{
-              p: { xs: 3, md: 4 },
-              borderRadius: 3,
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <Alert severity="success" sx={{ mb: 3 }}>
-              Your email has been verified successfully! Welcome to ZCommerce!
-            </Alert>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
-              You will be automatically redirected to your dashboard in 5 seconds.
-            </Typography>
-            <Button
-              variant="contained"
-              fullWidth
-              size="large"
-              onClick={() => navigate('/customer')}
-              sx={{
-                py: 1.5,
-                background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
-                boxShadow: '0 4px 20px rgba(25, 118, 210, 0.4)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #1565c0 0%, #7b1fa2 100%)',
-                  boxShadow: '0 6px 25px rgba(25, 118, 210, 0.5)',
-                },
-              }}
-            >
-              Go to Dashboard
-            </Button>
-          </Paper>
-        </>
-      );
-    }
+    // "Settled with no result" is still pending: the request starts in an
+    // effect, so the first paint has neither a result nor `isLoading` yet, and
+    // reading that as failure would flash a red cross at everyone.
+    const state = !token
+        ? 'failed'
+        : isSuccess
+          ? 'success'
+          : isLoading || !error
+            ? 'pending'
+            : 'failed';
 
     return (
-      <>
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #f44336 0%, #e91e63 100%)',
-              mb: 2,
-            }}
-          >
-            <ErrorOutline sx={{ fontSize: 48, color: 'white' }} />
-          </Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-            Verification Failed
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            We couldn't verify your email address
-          </Typography>
-        </Box>
-        <Paper
-          elevation={6}
-          sx={{
-            p: { xs: 3, md: 4 },
-            borderRadius: 3,
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {!token ? 'Invalid or missing verification token.' : (error as any)?.data?.message || 'Verification failed. The link may be expired or invalid.'}
-          </Alert>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
-            The verification link may have expired or is invalid. Please contact support or try signing up again.
-          </Typography>
-          <Box sx={{ textAlign: 'center' }}>
-            <Button
-              component={Link}
-              to="/authenticate/login"
-              variant="contained"
-              fullWidth
-              size="large"
-              sx={{
-                py: 1.5,
-                mb: 2,
-                background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
-                boxShadow: '0 4px 20px rgba(25, 118, 210, 0.4)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #1565c0 0%, #7b1fa2 100%)',
-                  boxShadow: '0 6px 25px rgba(25, 118, 210, 0.5)',
-                },
-              }}
-            >
-              Back to Sign In
-            </Button>
-            <Button
-              component={Link}
-              to="/authenticate/sign-up"
-              variant="outlined"
-              fullWidth
-              size="large"
-              sx={{
-                py: 1.5,
-                borderWidth: 2,
-                '&:hover': { borderWidth: 2 },
-              }}
-            >
-              Sign Up Again
-            </Button>
-          </Box>
-        </Paper>
-      </>
-    );
-  };
+        <AuthShell>
+            <Swap swapKey={state}>
+                {state === 'pending' && (
+                    <Reveal>
+                        <Card className="border border-border bg-card/85 text-center shadow-xl backdrop-blur [--card-spacing:--spacing(6)] sm:[--card-spacing:--spacing(8)]">
+                            <CardContent className="flex flex-col items-center gap-5">
+                                <span className="inline-flex size-20 items-center justify-center rounded-full bg-primary/12 text-primary ring-8 ring-primary/25">
+                                    <Spinner className="size-9" aria-hidden="true" />
+                                </span>
+                                <div className="flex flex-col gap-2">
+                                    <h1 className="font-heading text-2xl font-extrabold tracking-tight text-balance sm:text-3xl">
+                                        Verifying your email
+                                    </h1>
+                                    {/* The one live region on the page: this is the
+                                        sentence whose truth is about to change. */}
+                                    <p
+                                        aria-live="polite"
+                                        className="text-pretty text-muted-foreground"
+                                    >
+                                        One moment while we check the link you followed.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Reveal>
+                )}
 
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
-        py: { xs: 4, md: 8 },
-        px: 2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Container maxWidth="sm">
-        <Fade in timeout={500}>
-          <Box>
-            {renderContent()}
-          </Box>
-        </Fade>
-      </Container>
-    </Box>
-  );
+                {state === 'success' && (
+                    <AuthOutcome
+                        kind="check"
+                        tone="success"
+                        markLabel="Email verified"
+                        title="You are verified"
+                        description="Your email is confirmed and your account is ready. We will take you through in a moment."
+                        actions={
+                            <button
+                                type="button"
+                                onClick={() => navigate(currentLanding())}
+                                className="inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-sm transition-colors outline-none hover:bg-primary/90 focus-visible:ring-3 focus-visible:ring-ring/40"
+                            >
+                                Start shopping
+                            </button>
+                        }
+                    />
+                )}
+
+                {state === 'failed' && (
+                    <AuthOutcome
+                        kind="cross"
+                        tone="destructive"
+                        markLabel="Verification failed"
+                        title="That link did not work"
+                        description={
+                            token
+                                ? apiErrorMessage(
+                                      error,
+                                      'It may have expired or already been used. Signing in issues a fresh one.'
+                                  )
+                                : 'The link is missing its verification token, so we cannot tell which account it belongs to.'
+                        }
+                        actions={
+                            <>
+                                <AuthPrimaryLink to={navUrls.auth.login}>
+                                    Sign in to get a new link
+                                </AuthPrimaryLink>
+                                <AuthSecondaryLink to={navUrls.auth.signUp}>
+                                    Create an account instead
+                                </AuthSecondaryLink>
+                            </>
+                        }
+                    />
+                )}
+            </Swap>
+        </AuthShell>
+    );
 };
 
 export default EmaVerify;

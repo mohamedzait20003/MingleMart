@@ -1,162 +1,143 @@
-import { type FC } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { type FC, useCallback, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { toast } from 'react-toastify';
+import { KeyRoundIcon, MailIcon } from 'lucide-react';
 
-import { EmailOutlined, ArrowForward } from '@mui/icons-material';
-import { Box, TextField, Button, Typography, Container, Paper, InputAdornment, Alert, CircularProgress, Link, Fade, Stack } from '@mui/material';
+import { navUrls } from '@/lib/utils/navUrls';
+import { Shake } from '@/common/components/animation/shake';
+import { Swap } from '@/common/components/animation/swap';
+import { usePasswordForgot } from '@/lib/hooks/useUser';
+import { apiErrorMessage } from '@/lib/utils/apiError';
 
-import { useForgotPasswordMutation } from '../../../store/apis/authApi';
+import { AuthAlert } from '../components/auth-alert';
+import { AuthCard } from '../components/auth-card';
+import { AuthSecondaryLink, AuthSwitch } from '../components/auth-links';
+import { AuthOutcome } from '../components/auth-outcome';
+import { AuthShell } from '../components/auth-shell';
+import { SubmitButton } from '../components/submit-button';
+import { TextField } from '../components/text-field';
 
 interface ForgotPasswordFormData {
-  email: string;
+    email: string;
 }
 
 const PassForgot: FC = () => {
-  const navigate = useNavigate();
-  const [forgotPassword, { isLoading, error, isSuccess }] = useForgotPasswordMutation();
+    const [rejections, setRejections] = useState(0);
+    const shake = useCallback(() => setRejections((count) => count + 1), []);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ForgotPasswordFormData>({
-    mode: 'onTouched',
-    defaultValues: {
-      email: '',
-    },
-  });
+    const { requestReset, isLoading, isSuccess, error } = usePasswordForgot(shake);
 
-  const onSubmit = async (data: ForgotPasswordFormData) => {
-    try {
-      await forgotPassword({ email: data.email }).unwrap();
-      toast.success('Password reset link sent! Check your email.');
-    } catch (err) {
-      console.error('Password reset failed:', err);
-      toast.error('Failed to send reset link. Please try again.');
-    }
-  };
+    const [sentTo, setSentTo] = useState('');
+    // Lets someone who mistyped the address get the form back. The mutation's
+    // own success flag has no reason to un-set itself, so this overrides it.
+    const [editing, setEditing] = useState(false);
 
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
-        py: { xs: 4, md: 8 },
-        px: 2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Container maxWidth="sm">
-        <Fade in timeout={500}>
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-              Forgot your password?
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              No worries! Enter your email and we'll send you reset instructions
-            </Typography>
-          </Box>
-        </Fade>
-        <Fade in timeout={700}>
-          <Paper 
-            elevation={6} 
-            sx={{ 
-              p: { xs: 3, md: 4 }, 
-              borderRadius: 3,
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {(error as any)?.data?.message || 'Failed to send reset link. Please try again.'}
-              </Alert>
-            )}
-            {isSuccess && (
-              <Alert severity="success" sx={{ mb: 3 }}>
-                Reset instructions sent! Check your email inbox and spam folder.
-              </Alert>
-            )}
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack spacing={3} alignItems="center">
-                <Controller
-                  name="email"
-                  control={control}
-                  rules={{
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email format',
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Email Address"
-                      type="email"
-                      fullWidth
-                      error={!!errors.email}
-                      helperText={errors.email?.message || 'Enter the email associated with your account'}
-                      placeholder="john@example.com"
-                      variant="outlined"
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <EmailOutlined color="action" />
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
+    const {
+        control,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<ForgotPasswordFormData>({
+        mode: 'onTouched',
+        defaultValues: { email: '' },
+    });
+
+    const onSubmit = async (data: ForgotPasswordFormData) => {
+        setSentTo(data.email);
+        setEditing(false);
+        await requestReset({ email: data.email });
+    };
+
+    const sent = isSuccess && !editing;
+
+    // Once the mail is away the form has nothing left to do, so it is replaced
+    // rather than left under a success banner inviting a second send.
+    return (
+        <AuthShell>
+            <Swap swapKey={sent ? 'sent' : 'form'}>
+                {sent ? (
+                    <AuthOutcome
+                        kind="mail"
+                        tone="info"
+                        markLabel="Email sent"
+                        title="Check your inbox"
+                        description={`If ${sentTo || 'that address'} has an account with us, a reset link is on its way. It is good for one hour.`}
+                        actions={
+                            <>
+                                <AuthSecondaryLink to={navUrls.auth.login}>
+                                    Back to sign in
+                                </AuthSecondaryLink>
+                                <p className="text-sm text-pretty text-muted-foreground">
+                                    Nothing after a few minutes? Check your spam folder, or{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditing(true)}
+                                        className="cursor-pointer rounded-sm font-semibold text-primary underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/40"
+                                    >
+                                        try a different address
+                                    </button>
+                                    .
+                                </p>
+                            </>
+                        }
                     />
-                  )}
-                />
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  disabled={isLoading}
-                  endIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <ArrowForward />}
-                  sx={{
-                    py: 1.5,
-                    background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
-                    boxShadow: '0 4px 20px rgba(25, 118, 210, 0.4)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #1565c0 0%, #7b1fa2 100%)',
-                      boxShadow: '0 6px 25px rgba(25, 118, 210, 0.5)',
-                    },
-                    '&:disabled': {
-                      background: 'linear-gradient(135deg, #90caf9 0%, #ce93d8 100%)',
-                    },
-                  }}
-                >
-                  {isLoading ? 'Sending...' : 'Send Reset Link'}
-                </Button>
-              </Stack>
-            </form>
-            <Box sx={{ textAlign: 'center', mt: 3 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Remember your password?
-              </Typography>
-              <Link
-                component={RouterLink}
-                to="/authenticate/login"
-                color="primary"
-                underline="hover"
-                fontWeight="medium"
-              >
-                Back to Sign In
-              </Link>
-            </Box>
-          </Paper>
-        </Fade>
-      </Container>
-    </Box>
-  );
+                ) : (
+                    <AuthCard
+                        icon={KeyRoundIcon}
+                        title="Forgot your password?"
+                        description="Give us the email on your account and we will send you a link to set a new one."
+                        footer={
+                            <AuthSwitch
+                                prompt="Remembered it?"
+                                to={navUrls.auth.login}
+                                label="Back to sign in"
+                            />
+                        }
+                    >
+                        <Shake signal={rejections}>
+                            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                                {error && (
+                                    <AuthAlert tone="error" title="We could not send that link">
+                                        {apiErrorMessage(
+                                            error,
+                                            'Check the address and try again in a moment.'
+                                        )}
+                                    </AuthAlert>
+                                )}
+
+                                <Controller
+                                    name="email"
+                                    control={control}
+                                    rules={{
+                                        required: 'Enter the email on your account',
+                                        pattern: {
+                                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                            message: 'That does not look like an email address',
+                                        },
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            label="Email address"
+                                            type="email"
+                                            inputMode="email"
+                                            autoComplete="email"
+                                            placeholder="you@example.com"
+                                            icon={MailIcon}
+                                            error={errors.email?.message}
+                                            hint="We will only email the address you signed up with."
+                                        />
+                                    )}
+                                />
+
+                                <SubmitButton pending={isLoading} pendingLabel="Sending the link…">
+                                    Send reset link
+                                </SubmitButton>
+                            </form>
+                        </Shake>
+                    </AuthCard>
+                )}
+            </Swap>
+        </AuthShell>
+    );
 };
 
 export default PassForgot;

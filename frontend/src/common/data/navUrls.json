@@ -1,0 +1,47 @@
+{
+  "landing": {
+    "home": "/",
+    "shop": "/shop",
+    "deals": "/deals"
+  },
+  "common": {
+    "about": "/about",
+    "careers": "/careers",
+    "faqs": "/faqs",
+    "support": "/support",
+    "sell": "/sell",
+    "accessibility": "/accessibility",
+    "privacy": "/privacy",
+    "terms": "/terms"
+  },
+  "auth": {
+    "login": "/authenticate/login",
+    "signUp": "/authenticate/sign-up",
+    "accountVerify": "/authenticate/account-verify",
+    "emailVerify": "/authenticate/email-verify",
+    "passwordForgot": "/authenticate/password-forgot",
+    "passwordConfirm": "/authenticate/password-confirm",
+    "passwordChange": "/authenticate/password-change"
+  },
+  "customer": {
+    "base": "/user/:publicUserId",
+    "shop": "/user/:publicUserId/shop",
+    "deals": "/user/:publicUserId/deals",
+    "cart": "/user/:publicUserId/cart",
+    "orders": "/user/:publicUserId/orders"
+  },
+  "admin": {
+    "base": "/admin/:publicUserId",
+    "dashboard": "/admin/:publicUserId/dashboard",
+    "users": "/admin/:publicUserId/users",
+    "products": "/admin/:publicUserId/products"
+  },
+  "profile": {
+    "base": "/profile",
+    "security": "/profile/security",
+    "privacy": "/profile/privacy",
+    "shipping": "/profile/shipping",
+    "billing": "/profile/billing"
+  },
+  "unauthorized": "/unauthorized"
+}

@@ -1,7 +1,6 @@
 import { type FC } from 'react';
 
-import { Button } from '@mui/material';
-import { Download, DeleteForever } from '@mui/icons-material';
+import { MdDownload, MdDeleteForever } from 'react-icons/md';
 
 const DataManagement: FC = () => {
     const handleDownloadData = () => {
@@ -32,14 +31,14 @@ const DataManagement: FC = () => {
                                 Get a copy of all your personal data stored in our system including profile information, activity logs, and preferences.
                             </p>
                         </div>
-                        <Button
-                            variant="outlined"
-                            startIcon={<Download />}
+                        <button
+                            type="button"
                             onClick={handleDownloadData}
-                            className="ml-4"
+                            className="ml-4 inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
+                            <MdDownload />
                             Download
-                        </Button>
+                        </button>
                     </div>
                 </div>
                 <div className="p-4 bg-red-50 rounded-lg border border-red-200">
@@ -50,15 +49,14 @@ const DataManagement: FC = () => {
                                 Permanently delete your account and all associated data. This action cannot be undone.
                             </p>
                         </div>
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            startIcon={<DeleteForever />}
+                        <button
+                            type="button"
                             onClick={handleDeleteAccount}
-                            className="ml-4"
+                            className="ml-4 inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
+                            <MdDeleteForever />
                             Delete
-                        </Button>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -6,10 +6,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ZCommerce</title>
     <link rel="stylesheet" href="/src/index.css" />
-    <!--ssr-styles-->
+    <script>
+      // Runs before first paint so the themed background is never repainted.
+      // Reads redux-persist's `gen` slice directly: it stores the slice as JSON
+      // with each value itself JSON-encoded, hence the double parse. Keep the
+      // key in sync with GEN_PERSIST_KEY in src/lib/hooks/useTheme.ts.
+      (function () {
+        try {
+          var raw = localStorage.getItem('persist:gen');
+          var stored = raw ? JSON.parse(JSON.parse(raw).theme) : 'system';
+          var dark =
+            stored === 'dark' ||
+            (stored === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          // Reveal animations hide their content, so they must only engage when
+          // JS is actually running - otherwise no-JS visitors get a blank page.
+          document.documentElement.classList.add('js');
+          document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"><!--app-html--></div>
+    <!--app-state-->
     <script type="module" src="/src/entry-client.tsx"></script>
   </body>
 </html>
