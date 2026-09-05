@@ -1,0 +1,34 @@
+# Everything the build context does not need — and one thing the image must
+# never contain.
+
+# Secrets. In development the app reads ./.env directly; in a container the
+# same values arrive as real environment variables, which take precedence over
+# a file anyway. Neither belongs in an image layer.
+.env
+.env.example
+
+# Host build output. On a cold cache this is the largest thing in the context,
+# and the build stage compiles from source regardless.
+target/
+
+# The wrapper is unused: the build stage already has Maven.
+.mvn/
+mvnw
+mvnw.cmd
+
+# Development tooling and history.
+.git/
+.gitignore
+.gitattributes
+.hintrc
+.idea/
+.vscode/
+*.iml
+HELP.md
+
+# Describes services for the host, not for the image.
+compose.yaml
+
+# Self-referential.
+Dockerfile
+.dockerignore

@@ -1,77 +1,90 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 
-import authApi from '../apis/authApi';
-import userApi from '../apis/userApi';
+import { sessionExpired } from '@/lib/handlers/baseHandler';
+import { userHandlers } from '@/lib/handlers/userHandlers';
 
-import type { User } from '../types/userTypes';
+import type { Session } from '@/lib/auth/session';
+import type { AuthenticatedUser, UserState } from '@/lib/models/userModels';
 
-const initialState: User = {
-  firstName: '',
-  lastName: '',
-  username: '',
-  email: '',
-  profilePicURL: undefined,
-  isVerified: false,
-  faEnabled: false,
-  gender: '',
-  dateOfBirth: '',
-  language: 'en',
-  timeZone: 'UTC',
-  isActivityTracked: false,
-  isDataShared: false,
-  isEmailNotified: true,
-  isSecurityNotified: true,
-  isUpdateNotified: true,
-  sessions: []
+const {
+    signIn,
+    googleSignIn,
+    refresh,
+    signOut,
+    verifyEmail,
+    resetPassword,
+    updatePicture,
+} = userHandlers.endpoints;
+
+const initialState: UserState = {
+    id: null,
+    publicUserId: null,
+    role: null,
+    isAuthenticated: false,
+    isVerified: false,
+    displayName: '',
+    username: '',
+    email: '',
+
+    firstName: '',
+    lastName: '',
+    profilePicURL: undefined,
+    faEnabled: false,
+    gender: undefined,
+    dateOfBirth: '',
+    locale: 'en',
+    timeZone: 'UTC',
+
+    // Preference flags arrive from GET /api/profile, not from sign-in, so they
+    // stay undefined until that query resolves rather than pretending to
+    // defaults the server may disagree with.
+    customerProfile: undefined,
+};
+
+export const userStateFromSession = (session: Session | null): UserState => session ? {
+    ...initialState,
+    role: session.role,
+    publicUserId: session.publicUserId,
+    isVerified: session.isVerified,
+    isAuthenticated: true,
+} : initialState;
+
+const identify = (state: UserState, user: AuthenticatedUser) => {
+    state.id = user.id;
+    state.role = user.role;
+    state.isAuthenticated = true;
+    state.isVerified = user.verified;
+    state.displayName = user.displayName;
+    state.username = user.username;
+    state.email = user.email;
 };
 
 const userSlice = createSlice({
-  name: 'user',
-  initialState,
-  reducers: {
-  },
-  extraReducers: (builder) => {
-    builder.addMatcher(isAnyOf(
-        authApi.endpoints.login.matchFulfilled,
-        authApi.endpoints.signup.matchFulfilled,
-        authApi.endpoints.googlelogin.matchFulfilled
-      ), (state, action) => {
-        const userData = action.payload.data.user;
-
-        state.firstName = userData.firstName;
-        state.lastName = userData.lastName;
-        state.username = userData.username;
-        state.email = userData.email;
-        state.profilePicURL = userData.profilePicURL;
-        state.isVerified = userData.isVerified;
-        state.faEnabled = userData.faEnabled;
-        state.gender = userData.gender
-        state.dateOfBirth = userData.dateOfBirth;
-        state.language = userData.language;
-        state.timeZone = userData.timeZone;
-        state.isActivityTracked = userData.isActivityTracked;
-        state.isDataShared = userData.isDataShared;
-        state.isEmailNotified = userData.isEmailNotified;
-        state.isSecurityNotified = userData.isSecurityNotified;
-        state.isUpdateNotified = userData.isUpdateNotified;
-        state.sessions = userData.sessions;
-      }
-    ).addMatcher(isAnyOf(
-        authApi.endpoints.logout.matchFulfilled,
-        authApi.endpoints.logout.matchRejected
-      ), (state) => {
-        Object.assign(state, initialState);
-      }
-    ).addMatcher(
-      userApi.endpoints.updatePicture.matchFulfilled,
-      (state, action) => {
-        if (state.profilePicURL !== undefined) {
-          state.profilePicURL = action.payload.data;
-        }
-      }
-    );
-  }
+    name: 'user',
+    initialState,
+    reducers: {},
+    extraReducers: (builder) => {
+        builder.addMatcher(isAnyOf(signIn.matchFulfilled, googleSignIn.matchFulfilled, refresh.matchFulfilled),
+                (state, action) => identify(state, action.payload),
+            )
+            .addMatcher(verifyEmail.matchFulfilled, (state) => {
+                state.isVerified = true;
+            })
+            .addMatcher(
+                isAnyOf(
+                    signOut.matchFulfilled,
+                    signOut.matchRejected,
+                    resetPassword.matchFulfilled,
+                    sessionExpired.match,
+                ),
+                () => initialState,
+            )
+            .addMatcher(updatePicture.matchFulfilled, (state, action) => {
+                state.profilePicURL = action.payload;
+            });
+    },
 });
 
-export const {} = userSlice.actions;
+export const selectUser = (state: { user: UserState }) => state.user;
+
 export default userSlice.reducer;

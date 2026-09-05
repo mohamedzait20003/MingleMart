@@ -1,519 +1,412 @@
-import { type FC, useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { type FC, useCallback, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { GoogleLogin } from '@react-oauth/google';
-import { toast } from 'react-toastify';
+import { AtSignIcon, CakeIcon, MailIcon, UserIcon } from 'lucide-react';
 
-import { Visibility, VisibilityOff, PersonOutline, EmailOutlined, LockOutlined, ArrowForward, Cake, Wc } from '@mui/icons-material';
-import { Box, TextField, Button, Typography, Container, Paper, InputAdornment, IconButton, Checkbox, FormControlLabel, Alert, Divider, CircularProgress, Link, Fade, Stack, MenuItem } from '@mui/material';
+import { navUrls } from '@/lib/utils/navUrls';
+import { Checkbox } from '@/common/components/ui/checkbox';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/common/components/ui/field';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/common/components/ui/select';
+import { Shake } from '@/common/components/animation/shake';
+import { useGoogleAuth, useSignUp } from '@/lib/hooks/useUser';
+import { apiErrorMessage } from '@/lib/utils/apiError';
 
-import { useSignupMutation, useGoogleloginMutation } from '../../../store/apis/authApi';
+import type { Gender } from '@/lib/models/userModels';
+
+import { AuthAlert } from '../components/auth-alert';
+import { AuthCard } from '../components/auth-card';
+import { AuthLink, AuthSwitch } from '../components/auth-links';
+import { AuthShell } from '../components/auth-shell';
+import { GooglePanel } from '../components/google-panel';
+import { PasswordField } from '../components/password-field';
+import { SubmitButton } from '../components/submit-button';
+import { CONTROL_HEIGHT, TextField } from '../components/text-field';
 
 interface SignupFormData {
-  fName: string;
-  lName: string;
-  username: string;
-  email: string;
-  gender: string;
-  dateOfBirth: string;
-  password: string;
-  passwordConfirmation: string;
-  terms: boolean;
+    fName: string;
+    lName: string;
+    username: string;
+    email: string;
+    gender: string;
+    dateOfBirth: string;
+    password: string;
+    passwordConfirmation: string;
+    terms: boolean;
 }
 
+/** The select values, mapped onto the backend's Gender enum. */
+const GENDERS: Record<string, Gender> = {
+    male: 'MALE',
+    female: 'FEMALE',
+    other: 'OTHER',
+    'prefer-not-to-say': 'PREFER_NOT_TO_SAY',
+};
+
+const GENDER_LABELS: [value: string, label: string][] = [
+    ['male', 'Male'],
+    ['female', 'Female'],
+    ['other', 'Other'],
+    ['prefer-not-to-say', 'Prefer not to say'],
+];
+
 const SignUp: FC = () => {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [rejections, setRejections] = useState(0);
+    const shake = useCallback(() => setRejections((count) => count + 1), []);
 
-  const [signup, { isLoading, error }] = useSignupMutation();
-  const [googlelogin, { isLoading: isGoogleLoading }] = useGoogleloginMutation();
+    // The toasts and the redirect to the verification notice live in the hooks;
+    // this page supplies the form and the shake.
+    const { register, isLoading, error } = useSignUp(shake);
+    const {
+        onSuccess: onGoogleSuccess,
+        onError: onGoogleError,
+        isLoading: isGoogleLoading,
+    } = useGoogleAuth(shake);
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<SignupFormData>({
-    mode: 'onTouched',
-    defaultValues: {
-      fName: '',
-      lName: '',
-      username: '',
-      email: '',
-      gender: '',
-      dateOfBirth: '',
-      password: '',
-      passwordConfirmation: '',
-      terms: false,
-    },
-  });
+    const {
+        control,
+        handleSubmit,
+        watch,
+        formState: { errors },
+    } = useForm<SignupFormData>({
+        mode: 'onTouched',
+        defaultValues: {
+            fName: '',
+            lName: '',
+            username: '',
+            email: '',
+            gender: '',
+            dateOfBirth: '',
+            password: '',
+            passwordConfirmation: '',
+            terms: false,
+        },
+    });
 
-  const password = watch('password');
+    const password = watch('password');
+    const busy = isLoading || isGoogleLoading;
 
-  const onSubmit = async (data: SignupFormData) => {
-    try {
-      await signup({
-        fName: data.fName,
-        lName: data.lName,
-        username: data.username,
-        email: data.email,
-        gender: data.gender,
-        dateOfBirth: data.dateOfBirth,
-        password: data.password,
-        passwordConfirmation: data.passwordConfirmation,
-      }).unwrap();
+    // Caps the native date picker at today, so a future birthday cannot even be
+    // chosen — cheaper for the person filling it in than a validation message.
+    const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-      toast.success('Signup successful! Please verify your email.');
-      navigate('/authenticate/account-verify');
-    } catch (err) {
-      console.error('Signup failed:', err);
-      toast.error('Signup failed. Please try again.');
-    }
-  };
+    // The confirmation is a form-only field: the backend takes the password
+    // once, and the two are already checked against each other.
+    const onSubmit = (data: SignupFormData) =>
+        register({
+            fname: data.fName,
+            lname: data.lName,
+            username: data.username,
+            email: data.email,
+            gender: GENDERS[data.gender],
+            dateOfBirth: data.dateOfBirth,
+            password: data.password,
+        });
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    try {
-      const idToken = credentialResponse.credential;
-
-      await googlelogin({ idToken }).unwrap();
-      toast.success('Signed in with Google!');
-      navigate('/customer');
-    } catch (err) {
-      console.error('Google login failed:', err);
-      toast.error('Google login failed. Please try again.');
-    }
-  };
-
-  const handleGoogleError = () => {
-    console.error('Google login failed');
-    toast.error('Google login failed. Please try again.');
-  };
-
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
-        py: { xs: 4, md: 8 },
-        px: 2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Container maxWidth="sm">
-        <Fade in timeout={500}>
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-              Create your account
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Join thousands of happy shoppers today
-            </Typography>
-          </Box>
-        </Fade>
-        <Fade in timeout={700}>
-          <Paper
-            elevation={6}
-            sx={{
-              p: { xs: 3, md: 4 },
-              borderRadius: 3,
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {(error as any)?.data?.message || 'Signup failed. Please try again.'}
-              </Alert>
-            )}
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                size="large"
-                width="100%"
-                text="continue_with"
-                shape="rectangular"
-              />
-            </Box>
-            <Divider sx={{ my: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                Or sign up with email
-              </Typography>
-            </Divider>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack spacing={2.5} alignItems="center">
-                {/* First Name and Last Name in the same row */}
-                <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
-                  <Controller
-                    name="fName"
-                    control={control}
-                    rules={{
-                      required: 'First name is required',
-                      minLength: { value: 2, message: 'Minimum 2 characters required' },
-                      maxLength: { value: 100, message: 'Maximum 100 characters allowed' },
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="First Name"
-                        fullWidth
-                        error={!!errors.fName}
-                        helperText={errors.fName?.message}
-                        placeholder="John"
-                        variant="outlined"
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="lName"
-                    control={control}
-                    rules={{
-                      required: 'Last name is required',
-                      minLength: { value: 2, message: 'Minimum 2 characters required' },
-                      maxLength: { value: 100, message: 'Maximum 100 characters allowed' },
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Last Name"
-                        fullWidth
-                        error={!!errors.lName}
-                        helperText={errors.lName?.message}
-                        placeholder="Doe"
-                        variant="outlined"
-                      />
-                    )}
-                  />
-                </Stack>
-
-                <Controller
-                  name="username"
-                  control={control}
-                  rules={{
-                    required: 'Username is required',
-                    minLength: { value: 3, message: 'Minimum 3 characters required' },
-                    maxLength: { value: 50, message: 'Maximum 50 characters allowed' },
-                    pattern: {
-                      value: /^[a-zA-Z0-9_]+$/,
-                      message: 'Only letters, numbers, and underscores allowed',
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Username"
-                      fullWidth
-                      error={!!errors.username}
-                      helperText={errors.username?.message}
-                      placeholder="johndoe"
-                      variant="outlined"
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <PersonOutline color="action" />
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          paddingLeft: '8px',
-                        },
-                      }}
+    return (
+        <AuthShell showcase>
+            <AuthCard
+                title="Create your account"
+                description="It takes about a minute, and you can check out as a guest any time you would rather not."
+                footer={
+                    <AuthSwitch
+                        prompt="Already have an account?"
+                        to={navUrls.auth.login}
+                        label="Sign in"
                     />
-                  )}
-                />
-                <Controller
-                  name="email"
-                  control={control}
-                  rules={{
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email format',
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Email Address"
-                      type="email"
-                      fullWidth
-                      error={!!errors.email}
-                      helperText={errors.email?.message}
-                      placeholder="john@example.com"
-                      variant="outlined"
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <EmailOutlined color="action" />
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          paddingLeft: '8px',
-                        },
-                      }}
-                    />
-                  )}
+                }
+            >
+                <GooglePanel
+                    onSuccess={onGoogleSuccess}
+                    onError={onGoogleError}
+                    dividerLabel="or sign up with email"
+                    disabled={busy}
                 />
 
-                {/* Gender and Birth Date in the same row */}
-                <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
-                  <Controller
-                    name="gender"
-                    control={control}
-                    rules={{
-                      required: 'Gender is required',
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        select
-                        label="Gender"
-                        fullWidth
-                        error={!!errors.gender}
-                        helperText={errors.gender?.message}
-                        variant="outlined"
-                        slotProps={{
-                          input: {
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Wc color="action" />
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                      >
-                        <MenuItem value="male">Male</MenuItem>
-                        <MenuItem value="female">Female</MenuItem>
-                        <MenuItem value="other">Other</MenuItem>
-                        <MenuItem value="prefer-not-to-say">Prefer not to say</MenuItem>
-                      </TextField>
-                    )}
-                  />
-                  <Controller
-                    name="dateOfBirth"
-                    control={control}
-                    rules={{
-                      required: 'Birth date is required',
-                      validate: (value) => {
-                        const date = new Date(value);
-                        const today = new Date();
-                        const age = today.getFullYear() - date.getFullYear();
-                        if (age < 13) return 'You must be at least 13 years old';
-                        if (age > 120) return 'Invalid birth date';
-                        return true;
-                      },
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Birth Date"
-                        type="date"
-                        fullWidth
-                        error={!!errors.dateOfBirth}
-                        helperText={errors.dateOfBirth?.message}
-                        variant="outlined"
-                        slotProps={{
-                          inputLabel: { shrink: true },
-                          input: {
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Cake color="action" />
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                        sx={{
-                          '& .MuiInputBase-input': {
-                            paddingLeft: '8px',
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                </Stack>
-
-                <Controller
-                  name="password"
-                  control={control}
-                  rules={{
-                    required: 'Password is required',
-                    minLength: { value: 6, message: 'Minimum 6 characters required' },
-                    maxLength: { value: 100, message: 'Maximum 100 characters allowed' },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Password"
-                      type={showPassword ? 'text' : 'password'}
-                      fullWidth
-                      error={!!errors.password}
-                      helperText={errors.password?.message || 'Must be at least 6 characters'}
-                      placeholder="••••••••"
-                      variant="outlined"
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlined color="action" />
-                            </InputAdornment>
-                          ),
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={() => setShowPassword(!showPassword)}
-                                edge="end"
-                                aria-label="toggle password visibility"
-                              >
-                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          paddingLeft: '8px',
-                        },
-                      }}
-                    />
-                  )}
-                />
-                <Controller
-                  name="passwordConfirmation"
-                  control={control}
-                  rules={{
-                    required: 'Password confirmation is required',
-                    validate: (value) => value === password || 'Passwords do not match',
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Confirm Password"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      fullWidth
-                      error={!!errors.passwordConfirmation}
-                      helperText={errors.passwordConfirmation?.message}
-                      placeholder="••••••••"
-                      variant="outlined"
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlined color="action" />
-                            </InputAdornment>
-                          ),
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                edge="end"
-                                aria-label="toggle password confirmation visibility"
-                              >
-                                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          paddingLeft: '8px',
-                        },
-                      }}
-                    />
-                  )}
-                />
-                <Box sx={{ width: '100%' }}>
-                  <Controller
-                    name="terms"
-                    control={control}
-                    rules={{ required: 'You must accept the terms and conditions' }}
-                    render={({ field }) => (
-                      <>
-                        <FormControlLabel
-                          control={<Checkbox {...field} checked={field.value} color="primary" />}
-                          label={
-                            <Typography variant="body2" color="text.secondary">
-                              I agree to the{' '}
-                              <Link component={RouterLink} to="/terms" color="primary" underline="hover">
-                                Terms of Service
-                              </Link>{' '}
-                              and{' '}
-                              <Link component={RouterLink} to="/privacy" color="primary" underline="hover">
-                                Privacy Policy
-                              </Link>
-                            </Typography>
-                          }
-                        />
-                        {errors.terms && (
-                          <Typography variant="caption" color="error" sx={{ ml: 2, display: 'block' }}>
-                            {errors.terms.message}
-                          </Typography>
+                <Shake signal={rejections}>
+                    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
+                        {error && (
+                            <AuthAlert tone="error" title="We could not create your account">
+                                {apiErrorMessage(
+                                    error,
+                                    'Check the details below and try again.'
+                                )}
+                            </AuthAlert>
                         )}
-                      </>
-                    )}
-                  />
-                </Box>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  disabled={isLoading || isGoogleLoading}
-                  endIcon={(isLoading || isGoogleLoading) ? <CircularProgress size={20} color="inherit" /> : <ArrowForward />}
-                  sx={{
-                    py: 1.5,
-                    background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
-                    boxShadow: '0 4px 20px rgba(25, 118, 210, 0.4)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #1565c0 0%, #7b1fa2 100%)',
-                      boxShadow: '0 6px 25px rgba(25, 118, 210, 0.5)',
-                    },
-                    '&:disabled': {
-                      background: 'linear-gradient(135deg, #90caf9 0%, #ce93d8 100%)',
-                    },
-                  }}
-                >
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
-                </Button>
-              </Stack>
-            </form>
-            <Divider sx={{ my: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                Already have an account?
-              </Typography>
-            </Divider>
-            <Box sx={{ textAlign: 'center' }}>
-              <Button
-                component={RouterLink}
-                to="/authenticate/login"
-                variant="outlined"
-                color="primary"
-                fullWidth
-                sx={{
-                  py: 1,
-                  borderWidth: 2,
-                  '&:hover': { borderWidth: 2 }
-                }}
-              >
-                Sign In Instead
-              </Button>
-            </Box>
-          </Paper>
-        </Fade>
-      </Container>
-    </Box>
-  );
+
+                        <FieldSet>
+                            <FieldLegend variant="label">About you</FieldLegend>
+                            <FieldGroup className="gap-5">
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <Controller
+                                        name="fName"
+                                        control={control}
+                                        rules={{
+                                            required: 'Enter your first name',
+                                            minLength: { value: 2, message: 'At least 2 characters' },
+                                            maxLength: { value: 100, message: 'At most 100 characters' },
+                                        }}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                label="First name"
+                                                autoComplete="given-name"
+                                                placeholder="Jordan"
+                                                icon={UserIcon}
+                                                error={errors.fName?.message}
+                                            />
+                                        )}
+                                    />
+                                    <Controller
+                                        name="lName"
+                                        control={control}
+                                        rules={{
+                                            required: 'Enter your last name',
+                                            minLength: { value: 2, message: 'At least 2 characters' },
+                                            maxLength: { value: 100, message: 'At most 100 characters' },
+                                        }}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Last name"
+                                                autoComplete="family-name"
+                                                placeholder="Ellis"
+                                                error={errors.lName?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <Controller
+                                    name="username"
+                                    control={control}
+                                    rules={{
+                                        required: 'Pick a username',
+                                        minLength: { value: 3, message: 'At least 3 characters' },
+                                        maxLength: { value: 50, message: 'At most 50 characters' },
+                                        pattern: {
+                                            value: /^[a-zA-Z0-9_]+$/,
+                                            message: 'Letters, numbers and underscores only',
+                                        },
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            label="Username"
+                                            autoComplete="username"
+                                            placeholder="jordanellis"
+                                            icon={AtSignIcon}
+                                            error={errors.username?.message}
+                                            hint="This is the name sellers see on your reviews."
+                                        />
+                                    )}
+                                />
+
+                                <Controller
+                                    name="email"
+                                    control={control}
+                                    rules={{
+                                        required: 'Enter your email address',
+                                        pattern: {
+                                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                            message: 'That does not look like an email address',
+                                        },
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            label="Email address"
+                                            type="email"
+                                            inputMode="email"
+                                            autoComplete="email"
+                                            placeholder="you@example.com"
+                                            icon={MailIcon}
+                                            error={errors.email?.message}
+                                            hint="Order updates and your verification link go here."
+                                        />
+                                    )}
+                                />
+
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <Controller
+                                        name="gender"
+                                        control={control}
+                                        rules={{ required: 'Choose an option' }}
+                                        render={({ field }) => (
+                                            <Field data-invalid={errors.gender ? 'true' : undefined}>
+                                                <FieldLabel
+                                                    htmlFor="signup-gender"
+                                                    className="text-foreground"
+                                                >
+                                                    Gender
+                                                </FieldLabel>
+                                                <Select
+                                                    name={field.name}
+                                                    value={field.value || null}
+                                                    onValueChange={(value) => field.onChange(value)}
+                                                >
+                                                    <SelectTrigger
+                                                        id="signup-gender"
+                                                        aria-invalid={
+                                                            errors.gender ? true : undefined
+                                                        }
+                                                        className={`w-full ${CONTROL_HEIGHT}`}
+                                                    >
+                                                        <SelectValue placeholder="Select…" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {GENDER_LABELS.map(([value, label]) => (
+                                                            <SelectItem key={value} value={value}>
+                                                                {label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FieldError>{errors.gender?.message}</FieldError>
+                                            </Field>
+                                        )}
+                                    />
+
+                                    <Controller
+                                        name="dateOfBirth"
+                                        control={control}
+                                        rules={{
+                                            required: 'Enter your date of birth',
+                                            validate: (value) => {
+                                                const date = new Date(value);
+                                                const now = new Date();
+                                                const age = now.getFullYear() - date.getFullYear();
+                                                if (age < 13) return 'You must be at least 13 to sign up';
+                                                if (age > 120) return 'Check that date — it does not look right';
+                                                return true;
+                                            },
+                                        }}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Date of birth"
+                                                type="date"
+                                                max={today}
+                                                autoComplete="bday"
+                                                icon={CakeIcon}
+                                                error={errors.dateOfBirth?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </FieldGroup>
+                        </FieldSet>
+
+                        <FieldSet>
+                            <FieldLegend variant="label">Security</FieldLegend>
+                            <FieldGroup className="gap-5">
+                                <Controller
+                                    name="password"
+                                    control={control}
+                                    rules={{
+                                        required: 'Choose a password',
+                                        minLength: { value: 6, message: 'At least 6 characters' },
+                                        maxLength: { value: 100, message: 'At most 100 characters' },
+                                    }}
+                                    render={({ field }) => (
+                                        <PasswordField
+                                            {...field}
+                                            strength
+                                            label="Password"
+                                            autoComplete="new-password"
+                                            placeholder="At least 6 characters"
+                                            error={errors.password?.message}
+                                        />
+                                    )}
+                                />
+
+                                <Controller
+                                    name="passwordConfirmation"
+                                    control={control}
+                                    rules={{
+                                        required: 'Type your password again',
+                                        validate: (value) =>
+                                            value === password || 'These two do not match',
+                                    }}
+                                    render={({ field }) => (
+                                        <PasswordField
+                                            {...field}
+                                            label="Confirm password"
+                                            autoComplete="new-password"
+                                            placeholder="Type it again"
+                                            error={errors.passwordConfirmation?.message}
+                                        />
+                                    )}
+                                />
+                            </FieldGroup>
+                        </FieldSet>
+
+                        <Controller
+                            name="terms"
+                            control={control}
+                            rules={{ required: 'Please accept the terms to continue' }}
+                            render={({ field }) => (
+                                <Field
+                                    orientation="horizontal"
+                                    data-invalid={errors.terms ? 'true' : undefined}
+                                    className="items-start"
+                                >
+                                    <Checkbox
+                                        id="signup-terms"
+                                        name={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        onBlur={field.onBlur}
+                                        aria-invalid={errors.terms ? true : undefined}
+                                        aria-describedby={
+                                            errors.terms ? 'signup-terms-error' : undefined
+                                        }
+                                        className="mt-0.5"
+                                    />
+                                    <div className="flex flex-col gap-1">
+                                        <FieldLabel
+                                            htmlFor="signup-terms"
+                                            className="cursor-pointer font-normal text-pretty text-muted-foreground"
+                                        >
+                                            <span>
+                                                I agree to the{' '}
+                                                <AuthLink to={navUrls.common.terms}>
+                                                    Terms of Service
+                                                </AuthLink>{' '}
+                                                and{' '}
+                                                <AuthLink to={navUrls.common.privacy}>
+                                                    Privacy Policy
+                                                </AuthLink>
+                                                .
+                                            </span>
+                                        </FieldLabel>
+                                        <FieldError id="signup-terms-error">
+                                            {errors.terms?.message}
+                                        </FieldError>
+                                    </div>
+                                </Field>
+                            )}
+                        />
+
+                        <SubmitButton pending={busy} pendingLabel="Creating your account…">
+                            Create account
+                        </SubmitButton>
+                    </form>
+                </Shake>
+            </AuthCard>
+        </AuthShell>
+    );
 };
 
 export default SignUp;

@@ -1,0 +1,31 @@
+const PublicPolicy = {
+    type: 'public',
+} as const;
+
+const GuestPolicy = {
+    type: 'guest',
+} as const;
+
+type ProtectedPolicy = {
+    type: 'protected';
+    roles?: string[];
+    requireVerified?: boolean;
+    owner?: boolean;
+};
+
+export type RoutePolicyType = typeof PublicPolicy | typeof GuestPolicy | ProtectedPolicy;
+
+export const RoutePolicy = {
+    public: (): RoutePolicyType => PublicPolicy,
+
+    guest: (): RoutePolicyType => GuestPolicy,
+
+    protected: (
+        roles?: string[],
+        opts?: { requireVerified?: boolean; owner?: boolean },
+    ): ProtectedPolicy => ({
+        type: 'protected',
+        roles,
+        ...opts
+    }),
+};

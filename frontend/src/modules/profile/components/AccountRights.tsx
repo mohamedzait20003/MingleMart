@@ -1,13 +1,15 @@
 import { type FC, useState } from 'react';
 import { useSelector } from 'react-redux';
 
-import { Edit, Save, Cancel } from '@mui/icons-material';
-import { FormControlLabel, Switch, Button, IconButton } from '@mui/material';
+import { MdEdit, MdSave, MdCancel } from 'react-icons/md';
 
 import type { RootState } from '../../../store';
 
 const AccountRights: FC = () => {
-    const { isActivityTracked, isDataShared } = useSelector((state: RootState) => state.user);
+    // Flags live under `customerProfile`, which is undefined until
+    // GET /api/profile resolves; fall back to the server's own defaults.
+    const { isActivityTracked = false, isDataShared = false } =
+        useSelector((state: RootState) => state.user.customerProfile) ?? {};
 
     const [isEditing, setIsEditing] = useState(false);
     const [settings, setSettings] = useState({
@@ -38,13 +40,14 @@ const AccountRights: FC = () => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Account Privacy</h2>
                 {!isEditing && (
-                    <IconButton
-                        color="primary"
-                        size="small"
+                    <button
+                        type="button"
+                        aria-label="Edit section"
                         onClick={() => setIsEditing(true)}
+                        className="rounded-full p-2 text-blue-600 transition hover:bg-blue-50"
                     >
-                        <Edit fontSize="small" />
-                    </IconButton>
+                            <MdEdit />
+                    </button>
                 )}
             </div>
             <p className="text-sm text-gray-600 mb-6">
@@ -53,60 +56,50 @@ const AccountRights: FC = () => {
 
             <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={settings.activityTracking}
-                                onChange={() => handleToggle('activityTracking')}
-                                disabled={!isEditing}
-                            />
-                        }
-                        label={
-                            <div>
-                                <div className="font-medium text-gray-900">Activity Tracking</div>
-                                <div className="text-sm text-gray-600">Allow tracking of your activity for personalization</div>
-                            </div>
-                        }
-                    />
+                    <label className="flex cursor-pointer items-center gap-3">
+                        <input
+                            type="checkbox"
+                            checked={settings.activityTracking}
+                            onChange={() => handleToggle('activityTracking')}
+                            disabled={!isEditing}
+                            className="peer sr-only"
+                        />
+                        <span aria-hidden="true" className="relative h-6 w-11 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-blue-600 peer-checked:after:translate-x-5 peer-disabled:opacity-50" />
+                        <span>
+                            <span className="block font-medium text-gray-900">Activity Tracking</span>
+                            <span className="block text-sm text-gray-600">Allow tracking of your activity for personalization</span>
+                        </span>
+                    </label>
                 </div>
 
                 <div className="p-4 bg-gray-50 rounded-lg">
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={settings.dataSharing}
-                                onChange={() => handleToggle('dataSharing')}
-                                disabled={!isEditing}
-                            />
-                        }
-                        label={
-                            <div>
-                                <div className="font-medium text-gray-900">Third-Party Data Sharing</div>
-                                <div className="text-sm text-gray-600">Allow sharing data with trusted partners</div>
-                            </div>
-                        }
-                    />
+                    <label className="flex cursor-pointer items-center gap-3">
+                        <input
+                            type="checkbox"
+                            checked={settings.dataSharing}
+                            onChange={() => handleToggle('dataSharing')}
+                            disabled={!isEditing}
+                            className="peer sr-only"
+                        />
+                        <span aria-hidden="true" className="relative h-6 w-11 shrink-0 rounded-full bg-gray-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-blue-600 peer-checked:after:translate-x-5 peer-disabled:opacity-50" />
+                        <span>
+                            <span className="block font-medium text-gray-900">Third-Party Data Sharing</span>
+                            <span className="block text-sm text-gray-600">Allow sharing data with trusted partners</span>
+                        </span>
+                    </label>
                 </div>
             </div>
 
             {isEditing && (
                 <div className="flex gap-2 mt-4">
-                    <Button
-                        variant="contained"
-                        startIcon={<Save />}
-                        onClick={handleSave}
-                        size="small"
-                    >
+                    <button type="button" onClick={handleSave} className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        <MdSave />
                         Save
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        startIcon={<Cancel />}
-                        onClick={handleCancel}
-                        size="small"
-                    >
+                    </button>
+                    <button type="button" onClick={handleCancel} className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                        <MdCancel />
                         Cancel
-                    </Button>
+                    </button>
                 </div>
             )}
         </section>

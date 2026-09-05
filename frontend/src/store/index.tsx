@@ -1,74 +1,78 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, type Storage } from "redux-persist";
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import {
+    FLUSH,
+    PAUSE,
+    PERSIST,
+    PURGE,
+    REGISTER,
+    REHYDRATE,
+    persistReducer,
+    type Storage,
+} from 'redux-persist';
 
-import authReducer from "./slices/authSlice";
-import userReducer from "./slices/userSlice";
+import baseHandler, { type ApiExtra } from '@/lib/handlers/baseHandler';
 
-import authApi from "./apis/authApi";
-import userApi from "./apis/userApi";
+import genReducer from './slices/genSlice';
+import userReducer from './slices/userSlice';
 
-// SSR-safe storage - use a no-op storage on server
-const createNoopStorage = (): Storage => {
-    return {
-        getItem() {
-            return Promise.resolve(null);
-        },
-        setItem(_key: string, value: string) {
+/**
+ * localStorage on the client, a no-op on the server.
+ *
+ * SSR has no localStorage, and redux-persist would throw reaching for it. The
+ * server simply renders the default theme; the pre-paint script in index.html
+ * has already painted the stored one, so nothing flashes.
+ */
+const storage: Storage = typeof window === 'undefined'
+    ? {
+        getItem: () => Promise.resolve(null),
+        setItem: (_key, value) => Promise.resolve(value),
+        removeItem: () => Promise.resolve(),
+    }
+    : {
+        getItem: (key) => Promise.resolve(localStorage.getItem(key)),
+        setItem: (key, value) => {
+            localStorage.setItem(key, value);
             return Promise.resolve(value);
         },
-        removeItem() {
+        removeItem: (key) => {
+            localStorage.removeItem(key);
             return Promise.resolve();
         },
     };
-};
 
-const isServer = typeof window === "undefined";
+/**
+ * Only `gen` is persisted. Auth state deliberately is not: localStorage has no
+ * expiry, so a persisted `isAuthenticated` would outlive the cookies and leave
+ * the UI insisting you are signed in while every request 401s.
+ */
+const persistedGenReducer = persistReducer({ key: 'gen', storage }, genReducer);
 
-const storage: Storage = isServer ? createNoopStorage() : {
-    getItem(key: string) {
-        return Promise.resolve(localStorage.getItem(key));
-    },
-    setItem(key: string, value: string) {
-        localStorage.setItem(key, value);
-        return Promise.resolve(value);
-    },
-    removeItem(key: string) {
-        localStorage.removeItem(key);
-        return Promise.resolve();
-    },
-};
-
-const authPersistConfig = {
-    key: "auth",
-    storage,
-    whitelist: ["token", "role", "isVerified", "isAuthenticated"],
-};
-
-const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
-
-const userPersistConfig = {
-    key: "user",
-    storage,
-};
-
-const persistedUserReducer = persistReducer(userPersistConfig, userReducer);
-
-const store = configureStore({
-    reducer: {
-        auth: persistedAuthReducer,
-        user: persistedUserReducer,
-        [authApi.reducerPath]: authApi.reducer,
-        [userApi.reducerPath]: userApi.reducer,
-    },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-            serializableCheck: {
-                ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-            },
-        }).concat(authApi.middleware, userApi.middleware),
+const rootReducer = combineReducers({
+    gen: persistedGenReducer,
+    user: userReducer,
+    [baseHandler.reducerPath]: baseHandler.reducer,
 });
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof rootReducer>;
 
-export default store;
+export interface StoreOptions {
+    preloadedState?: Partial<RootState>;
+    cookie?: string;
+}
+
+export const makeStore = ({ preloadedState, cookie }: StoreOptions = {}) => configureStore({
+    reducer: rootReducer,
+    preloadedState,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+        thunk: { extraArgument: { cookie } satisfies ApiExtra },
+        // redux-persist dispatches these with non-serialisable payloads.
+        serializableCheck: {
+            ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        },
+    }).concat(baseHandler.middleware),
+});
+
+export type AppStore = ReturnType<typeof makeStore>;
+export type AppDispatch = AppStore['dispatch'];
+
+export default makeStore;

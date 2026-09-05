@@ -1,15 +1,14 @@
 import { type FC, useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 
-import { Avatar, IconButton, Button, CircularProgress } from '@mui/material';
-import { PhotoCamera, Edit, Save, Cancel } from '@mui/icons-material';
+import { MdPhotoCamera, MdEdit, MdSave, MdCancel } from 'react-icons/md';
 
-import type { RootState } from '../../../store';
-import { useUpdatePictureMutation } from '../../../store/apis/userApi';
+import { useUpdatePictureMutation } from '@/lib/handlers/userHandlers';
+import { useAppSelector } from '@/store/hooks';
+import { selectUser } from '@/store/slices/userSlice';
 
 const ProfilePicture: FC = () => {
-    const { profilePicURL, firstName, lastName } = useSelector((state: RootState) => state.user);
+    const { profilePicURL, firstName, lastName } = useAppSelector(selectUser);
     const [updatePicture, { isLoading }] = useUpdatePictureMutation();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -56,30 +55,34 @@ const ProfilePicture: FC = () => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Profile Picture</h2>
                 {!isEditing && (
-                    <IconButton
-                        color="primary"
-                        size="small"
+                    <button
+                        type="button"
+                        aria-label="Edit profile picture"
                         onClick={() => setIsEditing(true)}
+                        className="rounded-full p-2 text-blue-600 transition hover:bg-blue-50"
                     >
-                        <Edit fontSize="small" />
-                    </IconButton>
+                        <MdEdit />
+                    </button>
                 )}
             </div>
             <div className="flex items-center gap-6">
-                <Avatar
-                    sx={{ width: 100, height: 100 }}
-                    alt={`${firstName} ${lastName}`}
-                    src={previewURL || undefined}
-                />
+                {previewURL ? (
+                    <img
+                        src={previewURL}
+                        alt={`${firstName} ${lastName}`}
+                        className="h-25 w-25 rounded-full object-cover"
+                    />
+                ) : (
+                    <div className="flex h-25 w-25 items-center justify-center rounded-full bg-gray-200 text-2xl font-medium text-gray-600">
+                        {`${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase()}
+                    </div>
+                )}
                 <div className="flex-1">
                     {isEditing ? (
                         <div className="space-y-3">
                             <div>
-                                <Button
-                                    variant="outlined"
-                                    component="label"
-                                    startIcon={<PhotoCamera />}
-                                >
+                                <label className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer">
+                                    <MdPhotoCamera />
                                     Choose File
                                     <input
                                         hidden
@@ -87,7 +90,7 @@ const ProfilePicture: FC = () => {
                                         type="file"
                                         onChange={handleFileChange}
                                     />
-                                </Button>
+                                </label>
                                 {selectedFile && (
                                     <p className="text-sm text-gray-600 mt-2">
                                         Selected: {selectedFile.name}
@@ -95,23 +98,21 @@ const ProfilePicture: FC = () => {
                                 )}
                             </div>
                             <div className="flex gap-2">
-                                <Button
-                                    variant="contained"
-                                    startIcon={<Save />}
+                                <button
+                                    type="button"
                                     onClick={handleSave}
                                     disabled={!selectedFile || isLoading}
-                                    size="small"
+                                    className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {isLoading ? <CircularProgress size={20} /> : 'Save'}
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<Cancel />}
-                                    onClick={handleCancel}
-                                    size="small"
-                                >
+                                    <MdSave />
+                                    {isLoading
+                                        ? <span role="status" aria-label="Saving" className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                        : 'Save'}
+                                </button>
+                                <button type="button" onClick={handleCancel} className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                                    <MdCancel />
                                     Cancel
-                                </Button>
+                                </button>
                             </div>
                         </div>
                     ) : (

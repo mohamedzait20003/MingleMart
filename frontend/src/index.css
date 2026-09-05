@@ -1,1 +1,490 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Replaces MUI's <Fade in> transition on page shells. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out both;
+}
+
+.animate-fade-in-slow {
+  animation: fade-in 0.7s ease-out both;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --color-brand-1: var(--brand-1);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
+  --font-sans: 'Inter Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-sale: var(--sale);
+  --color-sale-foreground: var(--sale-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* MingleMart brand ramp: rose-400 -> rose-600 -> violet-600. */
+  --brand-1: oklch(0.712 0.163 12.42);
+  --brand-2: oklch(0.586 0.22 17.58);
+  --brand-3: oklch(0.541 0.281 293.01);
+
+  /* Surfaces */
+  --background: oklch(0.99 0.004 340); /* #FEFBFD */
+  --foreground: oklch(0.21 0.035 320); /* #1F1322 */
+  --card: oklch(1 0 0); /* #FFFFFF */
+  --card-foreground: oklch(0.21 0.035 320); /* #1F1322 */
+  --popover: oklch(1 0 0); /* #FFFFFF */
+  --popover-foreground: oklch(0.21 0.035 320); /* #1F1322 */
+
+  /* Brand + neutral roles */
+  --primary: oklch(0.586 0.22 17.58); /* #E02049 */
+  --primary-foreground: oklch(1 0 0); /* #FFFFFF */
+  --secondary: oklch(0.955 0.018 340); /* #F9ECF4 */
+  --secondary-foreground: oklch(0.3 0.06 10); /* #472027 */
+  --muted: oklch(0.965 0.01 335); /* #F8F1F6 */
+  --muted-foreground: oklch(0.505 0.028 320); /* #6C606F */
+  --accent: oklch(0.955 0.018 320); /* #F6ECF8 */
+  --accent-foreground: oklch(0.28 0.05 315); /* #32213A */
+
+  /* Status. Each doubles as `text-<token>` and as `bg-<token>` + `<token>-foreground`. */
+  --destructive: oklch(0.52 0.21 25); /* #C50220 */
+  --destructive-foreground: oklch(1 0 0); /* #FFFFFF */
+  --success: oklch(0.52 0.1373 152); /* #007E3E */
+  --success-foreground: oklch(1 0 0); /* #FFFFFF */
+  --warning: oklch(0.52 0.1132 70); /* #925B00 */
+  --warning-foreground: oklch(1 0 0); /* #FFFFFF */
+  --info: oklch(0.52 0.1478 250); /* #006BB9 */
+  --info-foreground: oklch(1 0 0); /* #FFFFFF */
+  --sale: oklch(0.55 0.1733 40); /* #C04100 */
+  --sale-foreground: oklch(1 0 0); /* #FFFFFF */
+
+  /* Lines. --border is a divider; --input is a control boundary and holds 3:1. */
+  --border: oklch(0.905 0.012 335); /* #E5DDE3 */
+  --input: oklch(0.62 0.022 335); /* #8F818B */
+  --ring: oklch(0.586 0.22 17.58); /* #E02049 */
+
+  /* Categorical data. Hue-spread, all >=3:1 on the page background. */
+  --chart-1: oklch(0.6 0.2 17); /* #DE3953 */
+  --chart-2: oklch(0.56 0.22 293); /* #7F4CE6 */
+  --chart-3: oklch(0.58 0.0988 200); /* #008B91 */
+  --chart-4: oklch(0.62 0.1311 75); /* #B37900 */
+  --chart-5: oklch(0.58 0.14 150); /* #2A904B */
+
+  --radius: 0.625rem;
+
+  /* Sidebar mirrors the core roles so admin chrome stays on-brand. */
+  --sidebar: var(--muted);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  /* Brand ramp lifted for contrast on dark surfaces. */
+  --brand-1: oklch(0.771 0.145 12.42);
+  --brand-2: oklch(0.667 0.198 17.58);
+  --brand-3: oklch(0.638 0.244 293.01);
+
+  /* Surfaces */
+  --background: oklch(0.16 0.012 320); /* #100C10 */
+  --foreground: oklch(0.97 0.005 320); /* #F7F4F7 */
+  --card: oklch(0.213 0.015 320); /* #1C171D */
+  --card-foreground: oklch(0.97 0.005 320); /* #F7F4F7 */
+  --popover: oklch(0.213 0.015 320); /* #1C171D */
+  --popover-foreground: oklch(0.97 0.005 320); /* #F7F4F7 */
+
+  /* Brand + neutral roles */
+  --primary: oklch(0.7 0.19 15); /* #FD6178 */
+  --primary-foreground: oklch(0.16 0.03 350); /* #17080F */
+  --secondary: oklch(0.275 0.02 320); /* #2C252E */
+  --secondary-foreground: oklch(0.97 0.005 320); /* #F7F4F7 */
+  --muted: oklch(0.275 0.02 320); /* #2C252E */
+  --muted-foreground: oklch(0.715 0.025 320); /* #AA9EAD */
+  --accent: oklch(0.3 0.028 320); /* #342937 */
+  --accent-foreground: oklch(0.97 0.005 320); /* #F7F4F7 */
+
+  /* Status. Each doubles as `text-<token>` and as `bg-<token>` + `<token>-foreground`. */
+  --destructive: oklch(0.7 0.18 25); /* #FA6863 */
+  --destructive-foreground: oklch(0.16 0.03 25); /* #180807 */
+  --success: oklch(0.74 0.15 152); /* #54C57A */
+  --success-foreground: oklch(0.16 0.03 152); /* #041107 */
+  --warning: oklch(0.8 0.14 80); /* #EDB345 */
+  --warning-foreground: oklch(0.16 0.03 80); /* #140C01 */
+  --info: oklch(0.72 0.14 250); /* #59AAF8 */
+  --info-foreground: oklch(0.16 0.03 250); /* #040E1A */
+  --sale: oklch(0.74 0.16 45); /* #FB864D */
+  --sale-foreground: oklch(0.16 0.03 45); /* #180904 */
+
+  /* Lines. --border is a divider; --input is a control boundary and holds 3:1. */
+  --border: oklch(0.32 0.02 320); /* #383039 */
+  --input: oklch(0.52 0.028 320); /* #706473 */
+  --ring: oklch(0.7 0.19 15); /* #FD6178 */
+
+  /* Categorical data. Hue-spread, all >=3:1 on the page background. */
+  --chart-1: oklch(0.72 0.1758 17); /* #FF6F7C */
+  --chart-2: oklch(0.7 0.1736 293); /* #A486FF */
+  --chart-3: oklch(0.72 0.12 200); /* #14BBC2 */
+  --chart-4: oklch(0.8 0.14 80); /* #EDB345 */
+  --chart-5: oklch(0.74 0.14 150); /* #62C37A */
+
+  /* Sidebar mirrors the core roles so admin chrome stays on-brand. */
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion primitives for src/common/components/animation.
+
+   Everything here is gated on `html.js` so server-rendered content is visible
+   to crawlers and to anyone whose JS never arrives, and on a reduced-motion
+   query so the whole system collapses to "just show it" when asked.
+   Only opacity and transform are animated, so nothing triggers layout.
+--------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal],
+  .js [data-stagger] > * {
+    opacity: 0;
+    transform: translate3d(0, var(--reveal-distance, 16px), 0);
+  }
+
+  .js [data-reveal][data-visible],
+  .js [data-stagger][data-visible] > * {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--reveal-duration, 620ms) var(--ease-out-soft) var(--reveal-delay, 0ms),
+      transform var(--reveal-duration, 620ms) var(--ease-out-soft) var(--reveal-delay, 0ms);
+  }
+
+  /* Children enter in sequence. Explicit rules rather than a loop because the
+     delay has to land on the child, and CSS has no iteration here. */
+  .js [data-stagger][data-visible] > *:nth-child(1) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 0); }
+  .js [data-stagger][data-visible] > *:nth-child(2) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 1); }
+  .js [data-stagger][data-visible] > *:nth-child(3) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 2); }
+  .js [data-stagger][data-visible] > *:nth-child(4) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 3); }
+  .js [data-stagger][data-visible] > *:nth-child(5) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 4); }
+  .js [data-stagger][data-visible] > *:nth-child(6) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 5); }
+  .js [data-stagger][data-visible] > *:nth-child(7) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 6); }
+  .js [data-stagger][data-visible] > *:nth-child(8) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 7); }
+  .js [data-stagger][data-visible] > *:nth-child(n + 9) { transition-delay: calc(var(--reveal-delay, 0ms) + var(--stagger-step, 60ms) * 8); }
+
+  [data-marquee-track] {
+    animation: marquee-slide var(--marquee-duration, 32s) linear infinite;
+    animation-direction: var(--marquee-direction, normal);
+  }
+
+  [data-marquee][data-pause-on-hover]:hover [data-marquee-track] {
+    animation-play-state: paused;
+  }
+
+  [data-float] {
+    animation: float-drift var(--float-duration, 7s) ease-in-out infinite;
+    animation-delay: var(--float-delay, 0ms);
+  }
+}
+
+@keyframes marquee-slide {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-100%, 0, 0); }
+}
+
+@keyframes float-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, var(--float-distance, -12px), 0); }
+}
+
+/* Softens both ends of a ticker so items enter and leave instead of popping. */
+[data-marquee][data-fade] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6rem, #000 calc(100% - 6rem), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6rem, #000 calc(100% - 6rem), transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   Second-tier motion primitives.
+
+   Same contract as the block above: gated on `html.js` where the effect would
+   strand content, gated on reduced-motion everywhere, and transform/opacity
+   only so nothing here can trigger layout.
+--------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Sweeping gloss. `auto` runs on its own; `hover` waits for the host. */
+  [data-shine] {
+    animation: shine-sweep var(--shine-duration, 2.8s) var(--ease-out-soft) var(--shine-delay, 0ms)
+      infinite;
+  }
+
+  [data-shine="hover"] {
+    animation-play-state: paused;
+  }
+
+  [data-shine-host]:hover [data-shine="hover"],
+  [data-shine-host]:focus-visible [data-shine="hover"],
+  [data-shine-host]:focus-within [data-shine="hover"] {
+    animation-play-state: running;
+  }
+
+  /* Slow hue drift for decorative background fields. */
+  [data-drift] {
+    animation: aurora-drift var(--drift-duration, 18s) ease-in-out var(--drift-delay, 0ms) infinite
+      alternate;
+  }
+
+  /* Attention pulse for scarcity signals. Opacity only, never size. */
+  [data-pulse] {
+    animation: soft-pulse var(--pulse-duration, 2s) ease-in-out infinite;
+  }
+}
+
+@keyframes shine-sweep {
+  0% {
+    transform: translate3d(-140%, 0, 0) skewX(-14deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0;
+  }
+  55.01%,
+  100% {
+    transform: translate3d(240%, 0, 0) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+@keyframes aurora-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(var(--drift-x, 4%), var(--drift-y, -6%), 0) scale(var(--drift-scale, 1.12));
+  }
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Pointer-tracked tilt. The transform is written by JS as three custom
+   properties so the element itself never restyles anything but its own layer. */
+[data-tilt] {
+  transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+    scale(var(--tilt-scale, 1));
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-tilt] {
+    transition: transform 400ms var(--ease-out-soft);
+  }
+
+  [data-tilt][data-tracking] {
+    /* While the pointer is moving the transform must follow it exactly. */
+    transition: none;
+  }
+}
+
+/* Glare follows the pointer across the tilted surface. */
+[data-tilt-glare] {
+  background: radial-gradient(
+    22rem circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    color-mix(in oklch, var(--card-foreground), transparent 88%),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out-soft);
+}
+
+[data-tilt][data-tracking] [data-tilt-glare] {
+  opacity: 1;
+}
+
+[data-magnetic] {
+  transform: translate3d(var(--magnet-x, 0px), var(--magnet-y, 0px), 0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-magnetic] {
+    transition: transform 350ms var(--ease-out-soft);
+  }
+
+  [data-magnetic][data-tracking] {
+    transition: transform 90ms linear;
+  }
+}
+
+[data-parallax] {
+  transform: translate3d(0, var(--parallax-y, 0px), 0);
+  will-change: transform;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion for the sign-in flows.
+
+   Same contract as above: the resting state is the finished state, and the
+   animation only exists inside the reduced-motion guard — so a visitor who has
+   asked for less motion sees a drawn tick, not an empty circle.
+--------------------------------------------------------------------------- */
+
+[data-draw-mark] {
+  stroke-dasharray: var(--mark-length, 100);
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-draw-mark] {
+    animation: draw-mark var(--mark-duration, 520ms) var(--ease-out-soft) var(--mark-delay, 0ms)
+      both;
+  }
+
+  [data-mark-ring] {
+    animation: mark-pop 460ms var(--ease-out-soft) both;
+  }
+
+  /* Content replaced inside the same container: the new value arrives, the old
+     one is already gone. One-directional, so nothing waits on an exit. */
+  [data-swap-in] {
+    animation: swap-in 320ms var(--ease-out-soft) both;
+  }
+
+  [data-shake] {
+    animation: shake-x 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+}
+
+@keyframes draw-mark {
+  from {
+    stroke-dashoffset: var(--mark-length, 100);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes mark-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Small and quick. A rejected password should register as a "no", not as a
+   cartoon — the amplitude stays inside the field's own bounds. */
+@keyframes shake-x {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  15% { transform: translate3d(-6px, 0, 0); }
+  30% { transform: translate3d(5px, 0, 0); }
+  45% { transform: translate3d(-4px, 0, 0); }
+  60% { transform: translate3d(3px, 0, 0); }
+  80% { transform: translate3d(-2px, 0, 0); }
+}

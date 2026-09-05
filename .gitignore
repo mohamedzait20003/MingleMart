@@ -1,81 +1,95 @@
 # ===========================
-# Shared / OS-specific
+# OS
 # ===========================
 .DS_Store
 Thumbs.db
-*.log
+desktop.ini
+
+# ===========================
+# Editors / IDEs
+# ===========================
 .vscode/
+.idea/
+.history/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.swo
+*~
+.metals/
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated/
+.springBeans
+.sts4-cache/
+**/nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# ===========================
+# Agent tooling (local, per-machine)
+# ===========================
+.codex/
+.claude/settings.local.json
+.claude/skills/
+
+# ===========================
+# Logs
+# ===========================
+*.log
+*.log.*
+logs/
+
+# ===========================
+# Environment / secrets
+# ===========================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# ===========================
+# Local databases
+# ===========================
+*.db
+*.db-shm
+*.db-wal
 
 # ===========================
 # Backend (Spring Boot / Maven)
 # ===========================
-# Build artifacts
-backend/target/
-backend/**/target/
-backend/**/dependency-reduced-pom.xml
-
-# IDE / editor
-backend/.vscode/
-backend/.idea/
-backend/*.iml
-backend/.classpath
-backend/.project
-backend/.settings/
-
-# Environment and secrets
-backend/.env
-backend/.env.*
-
-# Database files
-backend/**/*.db
-backend/**/*.db-shm
-backend/**/*.db-wal
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+*.class
+HELP.md
+dependency-reduced-pom.xml
+**/.mvn/wrapper/maven-wrapper.jar
 
 # ===========================
 # Frontend (Vite + TypeScript)
 # ===========================
-# Dependencies
-frontend/node_modules/
-frontend/.pnp/
-frontend/.pnp.js
+node_modules/
+dist/
+coverage/
+.vite/
+.eslintcache
+*.tsbuildinfo
+vite.config.*.timestamp-*
 
-# Build output
-frontend/dist/
-frontend/build/
-frontend/out/
-
-# Environment files
-frontend/.env
-frontend/.env.*
-!frontend/.env.example
-
-# Testing
-frontend/coverage/
-frontend/.nyc_output/
-
-# Logs
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/pnpm-debug.log*
-frontend/lerna-debug.log*
-
-# Vite specific
-frontend/.vite/
-frontend/.turbo/
-frontend/.parcel-cache/
-frontend/.next/
-
-# Editor
-frontend/.vscode/
-frontend/.idea/
-frontend/*.swp
-frontend/*.swo
-frontend/*~
-
-# Misc
-frontend/.DS_Store
-frontend/Thumbs.db
-
-# TypeScript
-frontend/*.tsbuildinfo
+# ===========================
+# Scratch
+# ===========================
+*.tmp
+*.bak

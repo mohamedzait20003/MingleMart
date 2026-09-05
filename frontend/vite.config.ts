@@ -13,8 +13,7 @@ export default defineConfig({
     outDir: 'dist/client',
   },
   ssr: {
-    // Keep these as external to use their native ESM exports
-    external: ['react-router-dom', 'react-router', 'redux-persist'],
+    external: ['react-router-dom', 'react-router'],
     noExternal: [
       '@react-oauth/google',
       'react-redux',
@@ -25,5 +24,8 @@ export default defineConfig({
   },
   resolve: {
     conditions: ['import', 'module', 'browser', 'default'],
+    alias: {
+      '@': '/src',
+    },
   },
 })
